@@ -233,7 +233,7 @@ Rectangle {
                 checked: true
                 text: qsTr("One-Sided")
                 onCheckStateChanged: {
-
+                    onesided = osc_check.checkState
                 }
             }
             /*CheckBox {

@@ -47,6 +47,8 @@ void Cluster_Architecture::resetCluster_Architecture(){
     m_coll_send_max = 0;
     m_p2p_recv_max = 0;
     m_coll_recv_max = 0;
+    m_osc_send_max = 0;
+    m_osc_recv_max = 0;
     m_time_display = 0;
 
     m_start_timestamp = QDateTime();
@@ -101,12 +103,15 @@ void Cluster_Architecture::startThread(){
     Database_Thread::connect(this, &Cluster_Architecture::reset_bottom_bar, m_dbThread, &Database_Thread::reset_actual_timestamp);
     Database_Thread::connect(m_dbThread, &Database_Thread::updateDetailedP2P, &m_detailed_p2p, &Detailed_p2p_data::queryData);
     Database_Thread::connect(m_dbThread, &Database_Thread::updateDetailedColl, &m_detailed_coll, &Detailed_coll_data::queryData);
+    Database_Thread::connect(m_dbThread, &Database_Thread::updateDetailedOneSided, &m_detailed_osc, &Detailed_p2p_data::queryData);
 
     Database_Thread::connect(m_dbThread, &Database_Thread::setFunctionsString, this, &Cluster_Architecture::set_mpi_functions);
     Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixP2PSend, this, &Cluster_Architecture::set_p2p_send_volume_matrix);
     Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixP2PRecv, this, &Cluster_Architecture::set_p2p_recv_volume_matrix);
     Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixCollSend, this, &Cluster_Architecture::set_coll_send_volume_matrix);
     Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixCollRecv, this, &Cluster_Architecture::set_coll_recv_volume_matrix);
+    Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixOneSidedSend, this, &Cluster_Architecture::set_one_sided_send_volume_matrix);
+    Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixOneSidedRecv, this, &Cluster_Architecture::set_one_sided_recv_volume_matrix);
 
     Database_Thread::connect(m_dbThread, &Database_Thread::setCommMatrixTotalSend, this, &Cluster_Architecture::set_total_send_volume_matrix);
 
@@ -173,12 +178,23 @@ long Cluster_Architecture::p2p_recv_max(){
     return m_p2p_recv_max;
 }
 
+long Cluster_Architecture::osc_send_max(){
+    return m_osc_send_max;
+}
+long Cluster_Architecture::osc_recv_max(){
+    return m_osc_recv_max;
+}
+
 long Cluster_Architecture::detailed_p2p_max(){
     return m_detailed_p2p_max;
 }
 
 long Cluster_Architecture::detailed_coll_max(){
     return m_detailed_coll_max;
+}
+
+long Cluster_Architecture::detailed_osc_max(){
+    return m_detailed_osc_max;
 }
 
 long Cluster_Architecture::detailed_total_max(){
@@ -223,9 +239,23 @@ void Cluster_Architecture::set_p2p_recv_max(long max){
     emit p2p_recv_max_changed();
 }
 
+void Cluster_Architecture::set_osc_send_max(long max){
+    m_osc_send_max = max;
+    emit osc_send_max_changed();
+}
+void Cluster_Architecture::set_osc_recv_max(long max){
+    m_osc_recv_max = max;
+    emit osc_recv_max_changed();
+}
+
 void Cluster_Architecture::set_detailed_coll_max(long max){
     m_detailed_coll_max = max;
     emit detailed_coll_max_changed();
+}
+
+void Cluster_Architecture::set_detailed_osc_max(long max){
+    m_detailed_osc_max = max;
+    emit detailed_osc_max_changed();
 }
 
 
@@ -294,23 +324,31 @@ void Cluster_Architecture::updateDataToUI(const QList<DataColumn> &list){
             r->set_coll_sendDatasize(0);
             r->set_p2p_recvDatasize(0);
             r->set_p2p_sendDatasize(0);
+            r->set_osc_recvDatasize(0);
+            r->set_osc_sendDatasize(0);
 
             r->set_p2p_late_sender(0);
             r->set_p2p_late_recvr(0);
             r->set_coll_late_sender(0);
             r->set_coll_late_recvr(0);
+            r->set_osc_late_sender(0);
+            r->set_osc_late_recvr(0);
 
             r->set_p2p_timediff(0);
             r->set_coll_timediff(0);
+            r->set_osc_timediff(0);
         }
     }
     set_p2p_recv_max(0);
     set_p2p_send_max(0);
     set_coll_send_max(0);
     set_coll_recv_max(0);
+    set_osc_send_max(0);
+    set_osc_recv_max(0);
 
     set_detailed_coll_max(0);
     set_detailed_p2p_max(0);
+    set_detailed_osc_max(0);
 
     QString name = m_nodes[0]->getName();
     int index = 0;
@@ -352,6 +390,18 @@ void Cluster_Architecture::updateDataToUI(const QList<DataColumn> &list){
             this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_coll_late_sender(dc.late_sender);
             this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_coll_late_recvr(dc.late_receiver);
             this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_coll_timediff(dc.time_diff);
+        } else if(dc.comm_type=="one-sided"){
+            if(dc.send_datasize>m_osc_send_max){
+                set_osc_send_max(dc.send_datasize);
+            }
+            if(dc.recv_datasize>m_osc_recv_max){
+                set_osc_recv_max(dc.recv_datasize);
+            }
+            this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_osc_sendDatasize(dc.send_datasize);
+            this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_osc_recvDatasize(dc.recv_datasize);
+            this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_osc_late_sender(dc.late_sender);
+            this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_osc_late_recvr(dc.late_receiver);
+            this->m_nodes[index]->rankAt(dc.proc_rank-this->m_nodes[index]->getSmalestRankId())->set_osc_timediff(dc.time_diff);
         } else{
             std::cerr << "The communication_type " << dc.comm_type.toStdString() << " is unknown!" << std::endl;
         }
@@ -423,6 +473,10 @@ Detailed_coll_data* Cluster_Architecture::detailedColl() {
     return &m_detailed_coll;
 }
 
+Detailed_p2p_data* Cluster_Architecture::detailedOneSided() {
+    return &m_detailed_osc;
+}
+
 //Methods for detailed matrices
 
 QVector<QVector<long>> Cluster_Architecture::p2p_send_volume_matrix() const{
@@ -461,6 +515,24 @@ QVector<QVector<long>> Cluster_Architecture::coll_recv_volume_matrix() const{
 void Cluster_Architecture::set_coll_recv_volume_matrix(QVector<QVector<long>> matrix){
     m_coll_recv_volume_matrix = matrix;
     emit coll_recv_volume_matrix_changed();
+}
+
+QVector<QVector<long>> Cluster_Architecture::one_sided_send_volume_matrix() const{
+    return m_one_sided_send_volume_matrix;
+}
+
+void Cluster_Architecture::set_one_sided_send_volume_matrix(QVector<QVector<long>> matrix){
+    m_one_sided_send_volume_matrix = matrix;
+    emit one_sided_send_volume_matrix_changed();
+}
+
+QVector<QVector<long>> Cluster_Architecture::one_sided_recv_volume_matrix() const{
+    return m_one_sided_recv_volume_matrix;
+}
+
+void Cluster_Architecture::set_one_sided_recv_volume_matrix(QVector<QVector<long>> matrix){
+    m_one_sided_recv_volume_matrix = matrix;
+    emit one_sided_recv_volume_matrix_changed();
 }
 
 QVector<QVector<long>> Cluster_Architecture::total_send_volume_matrix() const{
@@ -502,10 +574,12 @@ QVector<QVector<long>> addMatrices(const QVector<QVector<long>>& matrixA,
 void Cluster_Architecture::calculateDetailedMatricesMaxAndAvg() {
     m_detailed_p2p_max = 0;
     m_detailed_coll_max = 0;
+    m_detailed_osc_max = 0;
     m_detailed_total_max = 0;
 
     m_detailed_p2p_avg = 0;
     m_detailed_coll_avg = 0;
+    m_detailed_osc_avg = 0;
     m_detailed_total_avg = 0;
 
     for (const auto& row : m_p2p_send_volume_matrix) {
@@ -526,6 +600,15 @@ void Cluster_Architecture::calculateDetailedMatricesMaxAndAvg() {
         }
     }
 
+    for (const auto& row : m_one_sided_send_volume_matrix) {
+        for (const auto& value : row) {
+            if (value > m_detailed_osc_max) {
+                m_detailed_osc_max = value;
+            }
+            m_detailed_osc_avg += value;
+        }
+    }
+
     for (const auto& row : m_total_send_volume_matrix) {
         for (const auto& value : row) {
             if (value > m_detailed_total_max) {
@@ -537,6 +620,7 @@ void Cluster_Architecture::calculateDetailedMatricesMaxAndAvg() {
 
     int totalElementsP2P = m_proc_num * m_proc_num;
     int totalElementsColl = m_proc_num * m_proc_num;
+    int totalElementsOsc = m_proc_num * m_proc_num;
     int totalElementsTotal = m_proc_num * m_proc_num;
 
     if (totalElementsP2P > 0)
@@ -545,11 +629,15 @@ void Cluster_Architecture::calculateDetailedMatricesMaxAndAvg() {
     if (totalElementsColl > 0)
         m_detailed_coll_avg /= totalElementsColl;
 
+    if (totalElementsOsc > 0)
+        m_detailed_osc_avg /= totalElementsOsc;
+
     if (totalElementsTotal > 0)
         m_detailed_total_avg /= totalElementsTotal;
 
     emit detailed_p2p_max_changed();
     emit detailed_coll_max_changed();
+    emit detailed_osc_max_changed();
     emit detailed_total_max_changed();
 }
 

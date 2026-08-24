@@ -244,6 +244,7 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
 
     QList<QVariantList> p2p_list;
     QList<QVariantList> coll_list;
+    QList<QVariantList> one_sided_list;
 
     QString s = "";
 
@@ -294,7 +295,6 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
                 m_p2p_time_matrix[proc_rank][part_rank] += time;
 
             } else if(query.value(1) == "collective"){
-                //std::cout << "Test 1" << std::endl;
                 QVariantList list;
                 list << query.value(0) // function
                      << query.value(2) // processrank
@@ -336,6 +336,26 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
                 for(int i = 0; i< m_proc_num; i++){
                     m_coll_time_matrix[proc_rank][i] += time;
                 }
+            } else if(query.value(1) == "one-sided"){
+                QVariantList list;
+                list << query.value(0) // function
+                     << query.value(2) // processrank
+                     << query.value(3); // partnerrank
+                one_sided_list.append(list);
+                QString fun = query.value(0).toString() + ", ";
+                if(!s.contains(fun)){
+                    s.append(fun);
+                }
+                if(part_rank >= 0 && part_rank < m_proc_num){
+                    if(send_size > 0){
+                        m_total_send_volume_matrix[proc_rank][part_rank] += send_size;
+                        m_one_sided_send_volume_matrix[proc_rank][part_rank] += send_size;
+                    }
+                    if(recv_size > 0){
+                        m_one_sided_recv_volume_matrix[proc_rank][part_rank] += recv_size;
+                    }
+                    m_one_sided_time_matrix[proc_rank][part_rank] += time;
+                }
             }
         }
 
@@ -347,11 +367,14 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
     emit setFunctionsString(s);
     emit updateDetailedP2P(p2p_list);
     emit updateDetailedColl(coll_list);
+    emit updateDetailedOneSided(one_sided_list);
 
     emit setCommMatrixP2PSend(m_p2p_send_volume_matrix);
     emit setCommMatrixP2PRecv(m_p2p_recv_volume_matrix);
     emit setCommMatrixCollSend(m_coll_send_volume_matrix);
     emit setCommMatrixCollRecv(m_coll_recv_volume_matrix);
+    emit setCommMatrixOneSidedSend(m_one_sided_send_volume_matrix);
+    emit setCommMatrixOneSidedRecv(m_one_sided_recv_volume_matrix);
 
     emit setCommMatrixTotalSend(m_total_send_volume_matrix);
 
@@ -495,18 +518,24 @@ void Database_Thread::initialize_detailed_matrices() {
     m_p2p_recv_volume_matrix.resize(m_proc_num);
     m_coll_send_volume_matrix.resize(m_proc_num);
     m_coll_recv_volume_matrix.resize(m_proc_num);
+    m_one_sided_send_volume_matrix.resize(m_proc_num);
+    m_one_sided_recv_volume_matrix.resize(m_proc_num);
     m_total_send_volume_matrix.resize(m_proc_num);
     m_p2p_time_matrix.resize(m_proc_num);
     m_coll_time_matrix.resize(m_proc_num);
+    m_one_sided_time_matrix.resize(m_proc_num);
 
     for (int i = 0; i < m_proc_num; ++i) {
         m_p2p_send_volume_matrix[i] = QVector<long>(m_proc_num, 0);
         m_p2p_recv_volume_matrix[i] = QVector<long>(m_proc_num, 0);
         m_coll_send_volume_matrix[i] = QVector<long>(m_proc_num, 0);
         m_coll_recv_volume_matrix[i] = QVector<long>(m_proc_num, 0);
+        m_one_sided_send_volume_matrix[i] = QVector<long>(m_proc_num, 0);
+        m_one_sided_recv_volume_matrix[i] = QVector<long>(m_proc_num, 0);
         m_total_send_volume_matrix[i] = QVector<long>(m_proc_num, 0);
         m_p2p_time_matrix[i]       = QVector<float>(m_proc_num, 0.0);
         m_coll_time_matrix[i]      = QVector<float>(m_proc_num, 0.0);
+        m_one_sided_time_matrix[i] = QVector<float>(m_proc_num, 0.0);
     }
 }
 
@@ -519,9 +548,15 @@ void Database_Thread::reset_detailed_matrices() {
         row.fill(0);
     for (auto& row : m_coll_recv_volume_matrix)
         row.fill(0);
+    for (auto& row : m_one_sided_send_volume_matrix)
+        row.fill(0);
+    for (auto& row : m_one_sided_recv_volume_matrix)
+        row.fill(0);
     for (auto& row : m_p2p_time_matrix)
         row.fill(0.0);
     for (auto& row : m_coll_time_matrix)
+        row.fill(0.0);
+    for (auto& row : m_one_sided_time_matrix)
         row.fill(0.0);
     for (auto& row : m_total_send_volume_matrix)
         row.fill(0);

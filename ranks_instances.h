@@ -18,6 +18,7 @@ class Ranks_Instances : public QQuick3DInstancing
 
     Q_PROPERTY(bool p2p_show READ p2p_show WRITE set_p2pBool NOTIFY p2pBoolChanged)
     Q_PROPERTY(bool coll_show READ coll_show WRITE set_collBool NOTIFY collBoolChanged)
+    Q_PROPERTY(bool osc_show READ osc_show WRITE set_oscBool NOTIFY oscBoolChanged)
     Q_PROPERTY(QString combobox MEMBER m_combobox NOTIFY combobox_optionChanged)
 
     Q_PROPERTY(bool components_build READ components_build WRITE setComponents_build NOTIFY components_buildChanged)
@@ -47,6 +48,7 @@ public:
     long send_datasize();
     bool p2p_show();
     bool coll_show();
+    bool osc_show();
     bool components_build();
 
     QByteArray instanceData();
@@ -64,6 +66,7 @@ public slots:
     //void setOuterInstanceData(QByteArray arr);
     void set_p2pBool(bool show);
     void set_collBool(bool show);
+    void set_oscBool(bool show);
     void setComponents_build(bool comp);
 
 signals:
@@ -81,6 +84,7 @@ signals:
 
     void p2pBoolChanged();
     void collBoolChanged();
+    void oscBoolChanged();
     void combobox_optionChanged();
     void components_buildChanged();
 
@@ -105,6 +109,7 @@ private:
 
     bool m_p2p_show;
     bool m_coll_show;
+    bool m_osc_show;
     QString m_combobox;
     bool m_components_build;
 };

@@ -46,6 +46,9 @@ bool Ranks_Instances::p2p_show(){
 bool Ranks_Instances::coll_show(){
     return m_coll_show;
 }
+bool Ranks_Instances::osc_show(){
+    return m_osc_show;
+}
 bool Ranks_Instances::components_build(){
     return m_components_build;
 }
@@ -98,6 +101,11 @@ void Ranks_Instances::set_collBool(bool show){
     markDirty();
     //emit collBoolChanged();
 }
+void Ranks_Instances::set_oscBool(bool show){
+    m_osc_show = show;
+    markDirty();
+    //emit oscBoolChanged();
+}
 void Ranks_Instances::setComponents_build(bool comp){
     m_components_build = comp;
     markDirty();
@@ -144,25 +152,20 @@ QByteArray Ranks_Instances::getInstanceBuffer(int* instanceCount)
 
         float scale = m_innerCubeScale;
 
-        long send_data, recv_data;
+        long send_data = 0, recv_data = 0;
         float red, green, blue;
 
-        if(m_p2p_show && m_coll_show){
-            send_data = m_instanceRanks->rankAt(i)->p2p_send_datasize() + m_instanceRanks->rankAt(i)->coll_send_datasize();
-            recv_data = m_instanceRanks->rankAt(i)->p2p_recv_datasize() + m_instanceRanks->rankAt(i)->coll_recv_datasize();
-            //max_send = m_instanceRanks.
+        if(m_p2p_show){
+            send_data += m_instanceRanks->rankAt(i)->p2p_send_datasize();
+            recv_data += m_instanceRanks->rankAt(i)->p2p_recv_datasize();
         }
-        else if(m_p2p_show){
-            send_data = m_instanceRanks->rankAt(i)->p2p_send_datasize();
-            recv_data = m_instanceRanks->rankAt(i)->p2p_recv_datasize();
+        if(m_coll_show){
+            send_data += m_instanceRanks->rankAt(i)->coll_send_datasize();
+            recv_data += m_instanceRanks->rankAt(i)->coll_recv_datasize();
         }
-        else if(m_coll_show){
-            send_data = m_instanceRanks->rankAt(i)->coll_send_datasize();
-            recv_data = m_instanceRanks->rankAt(i)->coll_recv_datasize();
-        }
-        else {
-            send_data = 0;
-            recv_data = 0;
+        if(m_osc_show){
+            send_data += m_instanceRanks->rankAt(i)->osc_send_datasize();
+            recv_data += m_instanceRanks->rankAt(i)->osc_recv_datasize();
         }
 
         double full_percent = 0, send_percent = 0, recv_percent = 0;
@@ -184,13 +187,10 @@ QByteArray Ranks_Instances::getInstanceBuffer(int* instanceCount)
             }
 
         } else if(m_combobox == "max send ratio (across all procs)"){
-            if(m_p2p_show && m_coll_show){
-                full_percent = static_cast<double>(m_nodes->coll_send_max()) + static_cast<double>(m_nodes->p2p_send_max());
-            } else if(m_p2p_show){
-                full_percent = static_cast<double>(m_nodes->p2p_send_max());
-            } else if(m_coll_show){
-                full_percent = static_cast<double>(m_nodes->coll_send_max());
-            }
+            full_percent = 0;
+            if(m_p2p_show) full_percent += static_cast<double>(m_nodes->p2p_send_max());
+            if(m_coll_show) full_percent += static_cast<double>(m_nodes->coll_send_max());
+            if(m_osc_show) full_percent += static_cast<double>(m_nodes->osc_send_max());
             send_percent = send_data / full_percent;
             green = 255;
             red = 255 - send_percent*255;
@@ -199,13 +199,10 @@ QByteArray Ranks_Instances::getInstanceBuffer(int* instanceCount)
             //std::cout << "Send_data: " << send_data << " Full_Perc: " << full_percent << " Send_Perc: " << send_percent << " Coll_send_max: " << m_nodes->coll_send_max() << " p2p_send_max: " << m_nodes->p2p_send_max() << std::endl;
 
         } else if(m_combobox == "max recv ratio (across all procs)"){
-            if(m_p2p_show && m_coll_show){
-                full_percent = static_cast<double>(m_nodes->coll_recv_max()) + static_cast<double>(m_nodes->p2p_recv_max());
-            } else if(m_p2p_show){
-                full_percent = static_cast<double>(m_nodes->p2p_recv_max());
-            } else if(m_coll_show){
-                full_percent = static_cast<double>(m_nodes->coll_recv_max());
-            }
+            full_percent = 0;
+            if(m_p2p_show) full_percent += static_cast<double>(m_nodes->p2p_recv_max());
+            if(m_coll_show) full_percent += static_cast<double>(m_nodes->coll_recv_max());
+            if(m_osc_show) full_percent += static_cast<double>(m_nodes->osc_recv_max());
             recv_percent = recv_data / full_percent;
             //std::cout << "Recv_data: " << recv_data << " Full_Perc: " << full_percent << " Recv_Perc: " << recv_percent << std::endl;
             red = 255;
@@ -214,32 +211,13 @@ QByteArray Ranks_Instances::getInstanceBuffer(int* instanceCount)
 
         } else if(m_combobox == "wait for late sender (per proc)"){
 
-            float lateSenderData = 0;
-            float coll_data = m_instanceRanks->rankAt(i)->coll_late_sender();
-            float p2p_data = m_instanceRanks->rankAt(i)->p2p_late_sender();
-            float coll_time_diff = m_instanceRanks->rankAt(i)->coll_timediff();
-            float p2p_time_diff = m_instanceRanks->rankAt(i)->p2p_timediff();
+            float late_sender_num = 0;
+            float late_sender_den = 0;
+            if(m_p2p_show){ late_sender_num += m_instanceRanks->rankAt(i)->p2p_late_sender(); late_sender_den += m_instanceRanks->rankAt(i)->p2p_timediff(); }
+            if(m_coll_show){ late_sender_num += m_instanceRanks->rankAt(i)->coll_late_sender(); late_sender_den += m_instanceRanks->rankAt(i)->coll_timediff(); }
+            if(m_osc_show){ late_sender_num += m_instanceRanks->rankAt(i)->osc_late_sender(); late_sender_den += m_instanceRanks->rankAt(i)->osc_timediff(); }
 
-            if(m_p2p_show && m_coll_show){
-                if(coll_data == 0) {
-                    lateSenderData = p2p_data/p2p_time_diff;
-                } else if (p2p_data == 0){
-                    lateSenderData = coll_data/coll_time_diff;
-                } else {
-                    float p2p_lates = p2p_data/p2p_time_diff;
-                    float coll_lates = coll_data/coll_time_diff;
-                    float time_diff = p2p_time_diff + coll_time_diff;
-
-                    float weight_p2p = (p2p_time_diff/time_diff) * p2p_lates;
-                    float weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    lateSenderData = weight_p2p + weight_coll;
-                }
-            } else if(m_p2p_show) {
-                lateSenderData = p2p_data/p2p_time_diff;
-            } else if(m_coll_show) {
-                lateSenderData = coll_data/coll_time_diff;;
-            }
+            float lateSenderData = (late_sender_den == 0.0f) ? std::nanf("") : (late_sender_num / late_sender_den);
             blue = 255;
             red = 255 - lateSenderData*255;
             green = 255 - lateSenderData*255;
@@ -249,32 +227,13 @@ QByteArray Ranks_Instances::getInstanceBuffer(int* instanceCount)
             }
 
         } else if(m_combobox == "wait for late recver (per proc)"){
-            float lateRecvrData = 0;
-            float coll_data = m_instanceRanks->rankAt(i)->coll_late_recvr();
-            float p2p_data = m_instanceRanks->rankAt(i)->p2p_late_recvr();
-            float coll_time_diff = m_instanceRanks->rankAt(i)->coll_timediff();
-            float p2p_time_diff = m_instanceRanks->rankAt(i)->p2p_timediff();
+            float late_recvr_num = 0;
+            float late_recvr_den = 0;
+            if(m_p2p_show){ late_recvr_num += m_instanceRanks->rankAt(i)->p2p_late_recvr(); late_recvr_den += m_instanceRanks->rankAt(i)->p2p_timediff(); }
+            if(m_coll_show){ late_recvr_num += m_instanceRanks->rankAt(i)->coll_late_recvr(); late_recvr_den += m_instanceRanks->rankAt(i)->coll_timediff(); }
+            if(m_osc_show){ late_recvr_num += m_instanceRanks->rankAt(i)->osc_late_recvr(); late_recvr_den += m_instanceRanks->rankAt(i)->osc_timediff(); }
 
-            if(m_p2p_show && m_coll_show){
-                if(coll_data == 0) {
-                    lateRecvrData = p2p_data/p2p_time_diff;
-                } else if (p2p_data == 0){
-                    lateRecvrData = coll_data/coll_time_diff;
-                } else {
-                    float p2p_lates = p2p_data/p2p_time_diff;
-                    float coll_lates = coll_data/coll_time_diff;
-                    float time_diff = p2p_time_diff + coll_time_diff;
-
-                    float weight_p2p = (p2p_time_diff/time_diff) * p2p_lates;
-                    float weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    lateRecvrData = weight_p2p + weight_coll;
-                }
-            } else if(m_p2p_show) {
-                lateRecvrData = p2p_data/p2p_time_diff;
-            } else if(m_coll_show) {
-                lateRecvrData = coll_data/coll_time_diff;
-            }
+            float lateRecvrData = (late_recvr_den == 0.0f) ? std::nanf("") : (late_recvr_num / late_recvr_den);
             blue = 255;
             red = 255 - lateRecvrData*255;
             green = 255 - lateRecvrData*255;

@@ -66,6 +66,7 @@ signals:
     void updateDataReady(const QList<DataColumn> &list);
     void updateDetailedP2P(QList<QVariantList>);
     void updateDetailedColl(QList<QVariantList>);
+    void updateDetailedOneSided(QList<QVariantList>);
     void dbCleared();
     //set bool = 1 for start-timestamp and bool = 0 for end-timestamp
     void setTimestamp(QDateTime timestamp, bool start);
@@ -77,6 +78,8 @@ signals:
     void setCommMatrixP2PRecv(QVector<QVector<long>>);
     void setCommMatrixCollSend(QVector<QVector<long>>);
     void setCommMatrixCollRecv(QVector<QVector<long>>);
+    void setCommMatrixOneSidedSend(QVector<QVector<long>>);
+    void setCommMatrixOneSidedRecv(QVector<QVector<long>>);
     void setCommMatrixTotalSend(QVector<QVector<long>>);
 
 private:
@@ -99,10 +102,13 @@ private:
     QVector<QVector<long>> m_p2p_recv_volume_matrix;
     QVector<QVector<long>> m_coll_send_volume_matrix;
     QVector<QVector<long>> m_coll_recv_volume_matrix;
+    QVector<QVector<long>> m_one_sided_send_volume_matrix;
+    QVector<QVector<long>> m_one_sided_recv_volume_matrix;
     QVector<QVector<long>> m_total_send_volume_matrix;
 
     QVector<QVector<float>> m_p2p_time_matrix;
     QVector<QVector<float>> m_coll_time_matrix;
+    QVector<QVector<float>> m_one_sided_time_matrix;
 
     qint64 totalTimeNs = 0; // Gesamtdauer in Nanosekunden
     int queryCount = 0;

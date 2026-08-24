@@ -21,6 +21,11 @@ Cluster_Rank::Cluster_Rank(QObject *parent, int id) : QObject(parent), m_id(id)
     m_coll_late_sender = 0.0;
     m_coll_timediff = 0.0;
     m_p2p_timediff = 0.0;
+    m_osc_send_datasize = 0;
+    m_osc_recv_datasize = 0;
+    m_osc_late_recvr = 0.0;
+    m_osc_late_sender = 0.0;
+    m_osc_timediff = 0.0;
 }
 
 int Cluster_Rank::getId() const{
@@ -64,6 +69,21 @@ float Cluster_Rank::coll_late_recvr(){
 }
 float Cluster_Rank::coll_timediff(){
     return m_coll_timediff;
+}
+long Cluster_Rank::osc_send_datasize() {
+    return m_osc_send_datasize;
+}
+long Cluster_Rank::osc_recv_datasize() {
+    return m_osc_recv_datasize;
+}
+float Cluster_Rank::osc_late_sender() {
+    return m_osc_late_sender;
+}
+float Cluster_Rank::osc_late_recvr() {
+    return m_osc_late_recvr;
+}
+float Cluster_Rank::osc_timediff() {
+    return m_osc_timediff;
 }
 QVector3D Cluster_Rank::position(){
     //qDebug() << "Test: " << m_position;
@@ -110,6 +130,26 @@ void Cluster_Rank::set_coll_late_recvr(float time){
 void Cluster_Rank::set_coll_timediff(float time){
     m_coll_timediff = time;
     emit coll_timediffChanged();
+}
+void Cluster_Rank::set_osc_sendDatasize(long datasize){
+    m_osc_send_datasize = datasize;
+    emit send_osc_datasizeChanged();
+}
+void Cluster_Rank::set_osc_recvDatasize(long datasize){
+    m_osc_recv_datasize = datasize;
+    emit recv_osc_datasizeChanged();
+}
+void Cluster_Rank::set_osc_late_sender(float time){
+    m_osc_late_sender = time;
+    emit osc_late_senderChanged();
+}
+void Cluster_Rank::set_osc_late_recvr(float time){
+    m_osc_late_recvr = time;
+    emit osc_late_recvrChanged();
+}
+void Cluster_Rank::set_osc_timediff(float time){
+    m_osc_timediff = time;
+    emit osc_timediffChanged();
 }
 void Cluster_Rank::set_position(QVector3D vec){
     m_position = vec;

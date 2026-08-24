@@ -19,6 +19,7 @@ Window {
 
     property bool p2p: true
     property bool collective: true
+    property bool onesided: true
 
     property string selected_screen: "Cores3D"
     property string option: "send/recv ratio (per proc)"
@@ -94,6 +95,7 @@ Window {
         property string selected_screen: root.selected_screen
         property bool p2p: root.p2p
         property bool collective: root.collective
+        property bool onesided: root.onesided
 
         function flash() {
             opacityAnimation.start();

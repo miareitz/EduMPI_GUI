@@ -22,6 +22,11 @@ class Cluster_Rank : public QObject
     Q_PROPERTY(float coll_late_recvr READ coll_late_recvr WRITE set_coll_late_recvr NOTIFY coll_late_recvrChanged)
     Q_PROPERTY(float coll_timediff READ coll_timediff WRITE set_coll_timediff NOTIFY coll_timediffChanged)
     Q_PROPERTY(float p2p_timediff READ p2p_timediff WRITE set_p2p_timediff NOTIFY p2p_timediffChanged)
+    Q_PROPERTY(long osc_send_datasize READ osc_send_datasize WRITE set_osc_sendDatasize NOTIFY send_osc_datasizeChanged)
+    Q_PROPERTY(long osc_recv_datasize READ osc_recv_datasize WRITE set_osc_recvDatasize NOTIFY recv_osc_datasizeChanged)
+    Q_PROPERTY(float osc_late_sender READ osc_late_sender WRITE set_osc_late_sender NOTIFY osc_late_senderChanged)
+    Q_PROPERTY(float osc_late_recvr READ osc_late_recvr WRITE set_osc_late_recvr NOTIFY osc_late_recvrChanged)
+    Q_PROPERTY(float osc_timediff READ osc_timediff WRITE set_osc_timediff NOTIFY osc_timediffChanged)
 
     Q_PROPERTY(QVector3D position READ position WRITE set_position NOTIFY positionChanged)
 
@@ -45,6 +50,11 @@ public:
     float coll_late_sender();
     float coll_late_recvr();
     float coll_timediff();
+    long osc_send_datasize();
+    long osc_recv_datasize();
+    float osc_late_sender();
+    float osc_late_recvr();
+    float osc_timediff();
     QVector3D position();
     void set_p2p_sendDatasize(long datasize);
     void set_p2p_recvDatasize(long datasize);
@@ -56,6 +66,11 @@ public:
     void set_coll_late_sender(float time);
     void set_coll_late_recvr(float time);
     void set_coll_timediff(float time);
+    void set_osc_sendDatasize(long datasize);
+    void set_osc_recvDatasize(long datasize);
+    void set_osc_late_sender(float time);
+    void set_osc_late_recvr(float time);
+    void set_osc_timediff(float time);
     void set_position(QVector3D vec);
 
     Q_INVOKABLE int getId() const;
@@ -71,6 +86,11 @@ signals:
     void coll_late_senderChanged();
     void coll_late_recvrChanged();
     void coll_timediffChanged();
+    void send_osc_datasizeChanged();
+    void recv_osc_datasizeChanged();
+    void osc_late_senderChanged();
+    void osc_late_recvrChanged();
+    void osc_timediffChanged();
     void positionChanged();
 private:
     long m_p2p_send_datasize;
@@ -83,6 +103,11 @@ private:
     float m_coll_late_sender;
     float m_coll_late_recvr;
     float m_coll_timediff;
+    long m_osc_send_datasize;
+    long m_osc_recv_datasize;
+    float m_osc_late_sender;
+    float m_osc_late_recvr;
+    float m_osc_timediff;
     int m_id;
     int m_processrank;
     int timerId;

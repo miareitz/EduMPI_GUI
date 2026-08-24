@@ -11,6 +11,7 @@ Rectangle {
     property Cluster_Architecture listNodes: null
     property var p2pData: null
     property var collData: null
+    property var oscData: null
     property var positionMap: []
     property bool load: true
 
@@ -22,6 +23,7 @@ Rectangle {
         if(listNodes){
             p2pData =  listNodes.detailedP2P
             collData = listNodes.detailedColl
+            oscData = listNodes.detailedOneSided
         }
     }
 
@@ -84,6 +86,24 @@ Rectangle {
                 }
             }
             customGeoColl.newFrame()
+        }
+    }
+
+    Connections {
+        target: oscData
+        function onNewDataInsertion() {
+            customGeoOneSided.clearLines()
+            for(var row=0; row< oscData.rowCount(); row++){
+                var proc = oscData.simple_data(row, "processrank")
+                var partner = oscData.simple_data(row, "partnerrank")
+                if(partner < 0){
+                    continue;
+                }
+                if(positionMap[proc] !== undefined && positionMap[partner] !== undefined) {
+                    customGeoOneSided.addLine(positionMap[proc], positionMap[partner])
+                }
+            }
+            customGeoOneSided.newFrame()
         }
     }
 
@@ -257,6 +277,7 @@ Rectangle {
                                 id: instanceDatas
                                 p2p_show: p2p
                                 coll_show: collective
+                                osc_show: onesided
                                 combobox: option
                                 nodes: listNodes
                                 send_datasize: listNodes.nodeAt(model.index).rankAt(0).p2p_send_datasize;
@@ -364,6 +385,18 @@ Rectangle {
                     diffuseColor: "black"
                     emissiveFactor: Qt.vector3d(0.05, 0.05, 0.05)
                     lineWidth: 1.2
+                }
+            }
+            Model {
+                id: lineModelOneSided
+                geometry: CustomLineGeometry{
+                    id: customGeoOneSided
+                }
+                visible: onesided
+                materials: DefaultMaterial {
+                    depthDrawMode: Material.AlwaysDepthDraw
+                    diffuseColor: "blue"
+                    lineWidth: 1.0
                 }
             }
 

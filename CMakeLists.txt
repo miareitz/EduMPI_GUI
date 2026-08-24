@@ -6,7 +6,9 @@ set(CMAKE_BUILD_TYPE Debug)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
-set(PostgreSQL_ROOT "/opt/homebrew/opt/libpq" CACHE PATH "")
+if(APPLE)
+    set(PostgreSQL_ROOT "/opt/homebrew/opt/libpq" CACHE PATH "")
+endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -18,7 +20,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(WIN32)
     set(CMAKE_PREFIX_PATH "C:/Qt/6.8.1/mingw_64/lib/cmake/Qt6;C:/Qt/6.8.1/mingw_64/lib/cmake")
 elseif (LINUX)
-    set(CMAKE_PREFIX_PATH "/home/anna-lena/QtDesignStudio/6.8.1/gcc_64/lib/cmake/Qt6;/home/anna-lena/QtDesignStudio/6.8.1/gcc_64/lib/cmake")
+    set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Qt6")
 endif ()
 if(APPLE)
     # AGL existiert auf modernen macOS SDKs nicht mehr
@@ -31,10 +33,12 @@ find_package(PostgreSQL REQUIRED)
 
 qt_standard_project_setup()
 
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.5)
 qt_policy(SET QTP0001 NEW)  # Automatisches Generieren von qmldir und qmltypes
 qt_policy(SET QTP0002 NEW)  # Neues Verhalten für Build-/Installationsverzeichnis
 qt_policy(SET QTP0003 NEW)  # Für Plugins, wenn benötigt
 qt_policy(SET QTP0004 NEW)  # Module mit mehreren QML-Dateien benötigen ein qmldir
+endif()
 
 if (LINUX)
     find_package(PkgConfig REQUIRED)
@@ -149,10 +153,12 @@ add_custom_command(TARGET appGUI_Cluster POST_BUILD
         "${CMAKE_CURRENT_SOURCE_DIR}/GUI_Cluster/appGUI_Cluster.qmltypes"
 )
 
-add_custom_command(TARGET appGUI_Cluster POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy
-          /opt/homebrew/opt/libpq/lib/libpq.5.dylib
-          $<TARGET_BUNDLE_DIR:appGUI_Cluster>/Contents/Frameworks/libpq.5.dylib
-)
+if(APPLE)
+  add_custom_command(TARGET appGUI_Cluster POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            /opt/homebrew/opt/libpq/lib/libpq.5.dylib
+            $<TARGET_BUNDLE_DIR:appGUI_Cluster>/Contents/Frameworks/libpq.5.dylib
+  )
+endif()
 
 

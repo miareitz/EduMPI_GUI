@@ -32,15 +32,18 @@ Rectangle {
 
     onP2pSendDataChanged: {
         if(listNodes){
-            if(p2p && collective){
-                matrix = listNodes.total_send_volume_matrix
-                matrix_maximum = listNodes.detailed_total_max
-            } else if (p2p) {
+            if(onesided && !p2p && !collective){
+                matrix = listNodes.one_sided_send_volume_matrix
+                matrix_maximum = listNodes.detailed_osc_max
+            } else if(p2p && !collective && !onesided){
                 matrix = listNodes.p2p_send_volume_matrix
                 matrix_maximum = listNodes.detailed_p2p_max
-            } else if (collective) {
+            } else if(collective && !p2p && !onesided){
                 matrix = listNodes.coll_send_volume_matrix
                 matrix_maximum = listNodes.detailed_coll_max
+            } else {
+                matrix = listNodes.total_send_volume_matrix
+                matrix_maximum = listNodes.detailed_total_max
             }
         }
     }

@@ -168,15 +168,17 @@ Rectangle {
         switch(option) {
             case "send/recv ratio (per proc)": return calculateMaxSendRecv()
             case "max send ratio (across all procs)":
-                if(p2p && collective) return Number(listNodes.coll_send_max) + Number(listNodes.p2p_send_max)
-                else if(p2p) return Number(listNodes.p2p_send_max)
-                else if(collective) return Number(listNodes.coll_send_max)
-                return 0
+                var max_send = 0;
+                if(p2p) max_send += Number(listNodes.p2p_send_max);
+                if(collective) max_send += Number(listNodes.coll_send_max);
+                if(onesided) max_send += Number(listNodes.osc_send_max);
+                return max_send;
             case "max recv ratio (across all procs)":
-                if(p2p && collective) return Number(listNodes.coll_recv_max) + Number(listNodes.p2p_recv_max)
-                else if(p2p) return Number(listNodes.p2p_recv_max)
-                else if(collective) return Number(listNodes.coll_recv_max)
-                return 0
+                var max_recv = 0;
+                if(p2p) max_recv += Number(listNodes.p2p_recv_max);
+                if(collective) max_recv += Number(listNodes.coll_recv_max);
+                if(onesided) max_recv += Number(listNodes.osc_recv_max);
+                return max_recv;
             default: return 100
         }
     }
@@ -211,21 +213,11 @@ Rectangle {
     function calculateMaxSendRecv() { return 100000 }
 
     function get_send_ds(nodeIndex, modelIndex) {
-        if(p2p && collective) {
-            let sum1 = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_send_datasize);
-            let sum2 = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_send_datasize);
-            let sum = sum1 + sum2;
-            return sum;
-        }
-        else if(p2p) {
-            return listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_send_datasize;
-        }
-        else if(collective) {
-            return listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_send_datasize;
-        }
-        else {
-            return 0;
-        }
+        var sum = 0;
+        if(p2p) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_send_datasize);
+        if(collective) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_send_datasize);
+        if(onesided) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_send_datasize);
+        return sum;
     }
 
     function parse_ds(datasize) {
@@ -245,19 +237,11 @@ Rectangle {
     }
 
     function get_recv_ds(nodeIndex, modelIndex) {
-        if(p2p && collective) {
-            var sum = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_recv_datasize) + Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_recv_datasize);
-            return sum;
-        }
-        else if(p2p) {
-            return listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_recv_datasize;
-        }
-        else if(collective) {
-            return listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_recv_datasize;
-        }
-        else {
-            return 0;
-        }
+        var sum = 0;
+        if(p2p) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_recv_datasize);
+        if(collective) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_recv_datasize);
+        if(onesided) sum += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_recv_datasize);
+        return sum;
     }
 
     function createColor(nodeIndex, modelIndex) {
@@ -287,13 +271,10 @@ Rectangle {
         else if(option == "max send ratio (across all procs)") {
             gradient1 = "green"
             gradient2 = "white"
-            if(p2p && collective) {
-                full_percent = Number(listNodes.coll_send_max) + Number(listNodes.p2p_send_max);
-            } else if(p2p) {
-                full_percent = Number(listNodes.p2p_send_max);
-            } else if(collective) {
-                full_percent = Number(listNodes.coll_send_max);
-            }
+            full_percent = 0;
+            if(p2p) full_percent += Number(listNodes.p2p_send_max);
+            if(collective) full_percent += Number(listNodes.coll_send_max);
+            if(onesided) full_percent += Number(listNodes.osc_send_max);
             send_percent = send_ds / full_percent
             green = 255;
             red = 255 - send_percent*255;
@@ -305,13 +286,10 @@ Rectangle {
             }
         }
         else if(option == "max recv ratio (across all procs)") {
-            if(p2p && collective) {
-                full_percent = Number(listNodes.coll_recv_max) + Number(listNodes.p2p_recv_max);
-            } else if(p2p) {
-                full_percent = Number(listNodes.p2p_recv_max);
-            } else if(collective) {
-                full_percent = Number(listNodes.coll_recv_max);
-            }
+            full_percent = 0;
+            if(p2p) full_percent += Number(listNodes.p2p_recv_max);
+            if(collective) full_percent += Number(listNodes.coll_recv_max);
+            if(onesided) full_percent += Number(listNodes.osc_recv_max);
             recv_percent = recv_ds / full_percent
             red = 255;
             green = 255 - recv_percent*255;
@@ -323,32 +301,12 @@ Rectangle {
             }
         }
         else if(option == "wait for late sender (per proc)") {
-            var lateSenderData = 1;
-            coll_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_sender);
-            p2p_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_sender);
-            coll_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff);
-            p2p_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff);
-
-            if(p2p && collective) {
-                if(coll_data === 0) {
-                    lateSenderData = p2p_data/p2p_time_diff;
-                } else if (p2p_data === 0) {
-                    lateSenderData = coll_data/coll_time_diff;
-                } else {
-                    p2p_lates = p2p_data/p2p_time_diff;
-                    coll_lates = coll_data/coll_time_diff;
-                    time_diff = p2p_time_diff + coll_time_diff;
-
-                    weight_p2p = (p2p_time_diff/time_diff) * p2p_lates;
-                    weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    lateSenderData = weight_p2p + weight_coll;
-                }
-            } else if(p2p) {
-                lateSenderData = p2p_data/p2p_time_diff;
-            } else if(coll) {
-                lateSenderData = coll_data/coll_time_diff;
-            }
+            var late_sender_num = 0;
+            var late_sender_den = 0;
+            if(p2p) { late_sender_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_sender); late_sender_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff); }
+            if(collective) { late_sender_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_sender); late_sender_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff); }
+            if(onesided) { late_sender_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_late_sender); late_sender_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_timediff); }
+            var lateSenderData = late_sender_den === 0 ? NaN : (late_sender_num / late_sender_den);
 
             blue = 255;
             red = 255 - lateSenderData*255;
@@ -359,32 +317,12 @@ Rectangle {
             }
         }
         else if(option == "wait for late recver (per proc)") {
-            var lateRecvrData;
-            coll_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_recvr);
-            p2p_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_recvr);
-            coll_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff);
-            p2p_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff);
-
-            if(p2p && collective) {
-                if(coll_data === 0) {
-                    lateRecvrData = p2p_data/p2p_time_diff;
-                } else if (p2p_data === 0) {
-                    lateRecvrData = coll_data/coll_time_diff;
-                } else {
-                    p2p_lates = p2p_data/p2p_time_diff;
-                    coll_lates = coll_data/coll_time_diff;
-                    time_diff = p2p_time_diff + coll_time_diff;
-
-                    weight_p2p = (p2p_time_diff/time_diff) * p2p_lates;
-                    weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    lateRecvrData = weight_p2p + weight_coll;
-                }
-            } else if(p2p) {
-                lateRecvrData = p2p_data/p2p_time_diff;
-            } else if(coll) {
-                lateRecvrData = coll_data/coll_time_diff;
-            }
+            var late_recvr_num = 0;
+            var late_recvr_den = 0;
+            if(p2p) { late_recvr_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_recvr); late_recvr_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff); }
+            if(collective) { late_recvr_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_recvr); late_recvr_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff); }
+            if(onesided) { late_recvr_num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_late_recvr); late_recvr_den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_timediff); }
+            var lateRecvrData = late_recvr_den === 0 ? NaN : (late_recvr_num / late_recvr_den);
 
             blue = 255;
             red = 255 - lateRecvrData*255;
@@ -399,72 +337,23 @@ Rectangle {
     }
 
     function waitForLatePercent(nodeIndex, modelIndex, send_recv) {
-        var coll_data, p2p_data, coll_time_diff, p2p_time_diff, p2p_lates, coll_lates, time_diff, weight_p2p, weight_coll;
-        var full_percent, send_percent, recv_percent = 1;
+        var num = 0;
+        var den = 0;
 
         if(send_recv == "send") {
-            var lateSenderData = 1;
-            coll_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_sender);
-            p2p_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_sender);
-            coll_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff);
-            p2p_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff);
-
-            if(coll_data == 0 && p2p_data == 0 && coll_time_diff == 0 && p2p_time_diff == 0) {
-                return "0.00%"
-            }
-
-            if(p2p && collective) {
-                if(coll_data === 0) {
-                    return (p2p_data/p2p_time_diff * 100).toFixed(2) + "%";
-                } else if (p2p_data === 0) {
-                    return (coll_data/coll_time_diff * 100).toFixed(2) + "%";
-                } else {
-                    p2p_lates = p2p_data/p2p_time_diff;
-                    coll_lates = coll_data/coll_time_diff;
-                    time_diff = p2p_time_diff + coll_time_diff;
-
-                    weight_p2p = (p2p_time_diff/time_diff) * p2p_lates;
-                    weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    return (weight_p2p + weight_coll).toFixed(2) + "%";
-                }
-            } else if(p2p) {
-                return (p2p_data/p2p_time_diff * 100).toFixed(2) + "%";
-            } else if(collective) {
-                return (coll_data/coll_time_diff * 100).toFixed(2) + "%";
-            }
+            if(p2p) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_sender); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff); }
+            if(collective) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_sender); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff); }
+            if(onesided) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_late_sender); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_timediff); }
         } else if(send_recv == "recv") {
-            var lateRecvrData;
-            coll_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_recvr);
-            p2p_data = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_recvr);
-            coll_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff);
-            p2p_time_diff = Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff);
-
-            if(coll_data == 0 && p2p_data == 0 && coll_time_diff == 0 && p2p_time_diff == 0) {
-                return "0.00%"
-            }
-
-            if(p2p && collective) {
-                if(coll_data === 0) {
-                    return (p2p_data/p2p_time_diff * 100).toFixed(2) + "%";
-                } else if (p2p_data === 0) {
-                    return (coll_data/coll_time_diff * 100).toFixed(2) + "%";
-                } else {
-                    p2p_lates = p2p_data/p2p_time_diff;
-                    coll_lates = coll_data/coll_time_diff;
-                    time_diff = p2p_time_diff + coll_time_diff;
-
-                    weight_p2p = (p2p_time_diff/time_diff * 100) * p2p_lates;
-                    weight_coll = (coll_time_diff/time_diff) * coll_lates;
-
-                    return (weight_p2p + weight_coll * 100).toFixed(2) + "%";
-                }
-            } else if(p2p) {
-                return (p2p_data/p2p_time_diff * 100).toFixed(2) + "%";
-            } else if(collective) {
-                return (coll_data/coll_time_diff * 100).toFixed(2) + "%";
-            }
+            if(p2p) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_late_recvr); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).p2p_timediff); }
+            if(collective) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_late_recvr); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).coll_timediff); }
+            if(onesided) { num += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_late_recvr); den += Number(listNodes.nodeAt(nodeIndex).rankAt(modelIndex).osc_timediff); }
         }
+
+        if(num === 0 && den === 0) {
+            return "0.00%"
+        }
+        return (num / den * 100).toFixed(2) + "%";
     }
 
     function componentToHex(c) {

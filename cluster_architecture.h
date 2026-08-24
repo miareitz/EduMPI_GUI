@@ -29,12 +29,17 @@ class Cluster_Architecture : public QObject
     Q_PROPERTY(long p2p_recv_max READ p2p_recv_max WRITE set_p2p_recv_max NOTIFY p2p_recv_max_changed)
     Q_PROPERTY(long coll_recv_max READ coll_recv_max WRITE set_coll_recv_max NOTIFY coll_recv_max_changed)
 
+    Q_PROPERTY(long osc_send_max READ osc_send_max WRITE set_osc_send_max NOTIFY osc_send_max_changed)
+    Q_PROPERTY(long osc_recv_max READ osc_recv_max WRITE set_osc_recv_max NOTIFY osc_recv_max_changed)
+
     Q_PROPERTY(long detailed_p2p_max READ detailed_p2p_max WRITE set_detailed_p2p_max NOTIFY detailed_p2p_max_changed)
     Q_PROPERTY(long detailed_coll_max READ detailed_coll_max WRITE set_detailed_coll_max NOTIFY detailed_coll_max_changed)
+    Q_PROPERTY(long detailed_osc_max READ detailed_osc_max WRITE set_detailed_osc_max NOTIFY detailed_osc_max_changed)
     Q_PROPERTY(long detailed_total_max READ detailed_total_max WRITE set_detailed_total_max NOTIFY detailed_total_max_changed)
 
     Q_PROPERTY(long detailed_p2p_avg MEMBER m_detailed_p2p_avg NOTIFY detailed_p2p_max_changed)
     Q_PROPERTY(long detailed_coll_avg MEMBER m_detailed_coll_avg NOTIFY detailed_coll_max_changed)
+    Q_PROPERTY(long detailed_osc_avg MEMBER m_detailed_osc_avg NOTIFY detailed_osc_max_changed)
     Q_PROPERTY(long detailed_total_avg MEMBER m_detailed_total_avg NOTIFY detailed_total_max_changed)
 
     Q_PROPERTY(int slurm_id READ slurm_id WRITE set_slurm_id NOTIFY slurm_id_changed)
@@ -46,6 +51,7 @@ class Cluster_Architecture : public QObject
 
     Q_PROPERTY(Detailed_p2p_data* detailedP2P READ detailedP2P CONSTANT)
     Q_PROPERTY(Detailed_coll_data* detailedColl READ detailedColl CONSTANT)
+    Q_PROPERTY(Detailed_p2p_data* detailedOneSided READ detailedOneSided CONSTANT)
 
     Q_PROPERTY(QString mpi_functions READ mpi_functions WRITE set_mpi_functions NOTIFY mpi_functions_changed)
 
@@ -53,6 +59,9 @@ class Cluster_Architecture : public QObject
     Q_PROPERTY(QVector<QVector<long>> p2p_recv_volume_matrix READ p2p_recv_volume_matrix WRITE set_p2p_recv_volume_matrix NOTIFY p2p_recv_volume_matrix_changed)
     Q_PROPERTY(QVector<QVector<long>> coll_send_volume_matrix READ coll_send_volume_matrix WRITE set_coll_send_volume_matrix NOTIFY coll_send_volume_matrix_changed)
     Q_PROPERTY(QVector<QVector<long>> coll_recv_volume_matrix READ coll_recv_volume_matrix WRITE set_coll_recv_volume_matrix NOTIFY coll_recv_volume_matrix_changed)
+
+    Q_PROPERTY(QVector<QVector<long>> one_sided_send_volume_matrix READ one_sided_send_volume_matrix WRITE set_one_sided_send_volume_matrix NOTIFY one_sided_send_volume_matrix_changed)
+    Q_PROPERTY(QVector<QVector<long>> one_sided_recv_volume_matrix READ one_sided_recv_volume_matrix WRITE set_one_sided_recv_volume_matrix NOTIFY one_sided_recv_volume_matrix_changed)
 
     Q_PROPERTY(QVector<QVector<long>> total_send_volume_matrix READ total_send_volume_matrix WRITE set_total_send_volume_matrix NOTIFY total_send_volume_matrix_changed)
 
@@ -65,12 +74,15 @@ public:
 
     Detailed_p2p_data* detailedP2P();
     Detailed_coll_data* detailedColl();
+    Detailed_p2p_data* detailedOneSided();
 
     //detailed matrices
     QVector<QVector<long>> p2p_send_volume_matrix() const;
     QVector<QVector<long>> p2p_recv_volume_matrix() const;
     QVector<QVector<long>> coll_send_volume_matrix() const;
     QVector<QVector<long>> coll_recv_volume_matrix() const;
+    QVector<QVector<long>> one_sided_send_volume_matrix() const;
+    QVector<QVector<long>> one_sided_recv_volume_matrix() const;
     QVector<QVector<long>> total_send_volume_matrix() const;
 
     int count() const;
@@ -78,9 +90,12 @@ public:
     long coll_send_max();
     long p2p_recv_max();
     long coll_recv_max();
+    long osc_send_max();
+    long osc_recv_max();
 
     long detailed_p2p_max();
     long detailed_coll_max();
+    long detailed_osc_max();
     long detailed_total_max();
 
     int slurm_id();
@@ -93,9 +108,12 @@ public:
     void set_coll_send_max(long max);
     void set_p2p_recv_max(long max);
     void set_coll_recv_max(long max);
+    void set_osc_send_max(long max);
+    void set_osc_recv_max(long max);
 
     void set_detailed_p2p_max(long max);
     void set_detailed_coll_max(long max);
+    void set_detailed_osc_max(long max);
     void set_detailed_total_max(long max);
     //void set_slurm_id(int id);
 
@@ -129,9 +147,12 @@ signals:
     void coll_send_max_changed();
     void p2p_recv_max_changed();
     void coll_recv_max_changed();
+    void osc_send_max_changed();
+    void osc_recv_max_changed();
 
     void detailed_p2p_max_changed();
     void detailed_coll_max_changed();
+    void detailed_osc_max_changed();
     void detailed_total_max_changed();
 
     void slurm_id_changed();
@@ -165,6 +186,8 @@ signals:
     void p2p_recv_volume_matrix_changed();
     void coll_send_volume_matrix_changed();
     void coll_recv_volume_matrix_changed();
+    void one_sided_send_volume_matrix_changed();
+    void one_sided_recv_volume_matrix_changed();
     void total_send_volume_matrix_changed();
 
     QVector<QVector<long>> addMatrices(const QVector<QVector<long>>& matrixA,
@@ -184,6 +207,8 @@ public slots:
     void set_p2p_recv_volume_matrix(QVector<QVector<long>> matrix);
     void set_coll_send_volume_matrix(QVector<QVector<long>> matrix);
     void set_coll_recv_volume_matrix(QVector<QVector<long>> matrix);
+    void set_one_sided_send_volume_matrix(QVector<QVector<long>> matrix);
+    void set_one_sided_recv_volume_matrix(QVector<QVector<long>> matrix);
     void set_total_send_volume_matrix(QVector<QVector<long>> matrix);
 
 
@@ -199,12 +224,16 @@ private:
     long m_coll_send_max = 0;
     long m_p2p_recv_max = 0;
     long m_coll_recv_max = 0;
+    long m_osc_send_max = 0;
+    long m_osc_recv_max = 0;
 
     long m_detailed_p2p_max;
     long m_detailed_coll_max;
+    long m_detailed_osc_max;
     long m_detailed_total_max;
     long m_detailed_p2p_avg;
     long m_detailed_coll_avg;
+    long m_detailed_osc_avg;
     long m_detailed_total_avg;
 
     bool m_connection_ready = false;
@@ -231,6 +260,7 @@ private:
     //database detailed data
     Detailed_p2p_data m_detailed_p2p;
     Detailed_coll_data m_detailed_coll;
+    Detailed_p2p_data m_detailed_osc;
 
     QString m_mpi_functions;
 
@@ -239,6 +269,8 @@ private:
     QVector<QVector<long>> m_p2p_recv_volume_matrix;
     QVector<QVector<long>> m_coll_send_volume_matrix;
     QVector<QVector<long>> m_coll_recv_volume_matrix;
+    QVector<QVector<long>> m_one_sided_send_volume_matrix;
+    QVector<QVector<long>> m_one_sided_recv_volume_matrix;
     QVector<QVector<long>> m_total_send_volume_matrix;
 
 protected:

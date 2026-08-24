@@ -142,7 +142,7 @@ void CustomLineGeometry::rebuildGeometry()
 
 
 
-    emit geometryChanged();
+    emit linesUpdated();
 }
 
 
