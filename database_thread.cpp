@@ -4,6 +4,7 @@
 #include <QSqlRecord>
 #include <unistd.h>
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QStandardItemModel>
 #include <QSqlError>
 #include <QTimeZone>
