@@ -74,6 +74,9 @@ public:
     Q_INVOKABLE Table_UserID *getJobTable();
     Q_INVOKABLE QString getClusterIdent();
 
+    Q_INVOKABLE void saveDatabaseSettings(const QString &host, const QString &port, const QString &db, const QString &user, const QString &password);
+    Q_INVOKABLE QVariantMap loadDatabaseSettings();
+
     Q_INVOKABLE bool copyEnvFile();
 
 signals:

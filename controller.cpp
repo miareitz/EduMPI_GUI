@@ -8,6 +8,7 @@
 #include <QFile>
 #include <qdatetime.h>
 #include <QMetaObject>
+#include <QSettings>
 
 #include <unistd.h>
 #include <csignal>
@@ -615,6 +616,26 @@ void Controller::setTimestamp(QTime timestamp){
 Table_UserID* Controller::getJobTable(){
     m_job_table->loadJobs(m_cluster_ident);
     return m_job_table;
+}
+
+void Controller::saveDatabaseSettings(const QString &host, const QString &port, const QString &db, const QString &user, const QString &password){
+    QSettings settings("EduMPI", "GUI_Cluster");
+    settings.setValue("db/host", host);
+    settings.setValue("db/port", port);
+    settings.setValue("db/name", db);
+    settings.setValue("db/user", user);
+    settings.setValue("db/password", password);
+}
+
+QVariantMap Controller::loadDatabaseSettings(){
+    QSettings settings("EduMPI", "GUI_Cluster");
+    QVariantMap map;
+    map["host"] = settings.value("db/host", "").toString();
+    map["port"] = settings.value("db/port", "").toString();
+    map["name"] = settings.value("db/name", "").toString();
+    map["user"] = settings.value("db/user", "").toString();
+    map["password"] = settings.value("db/password", "").toString();
+    return map;
 }
 
 QVariantList Controller::open_job_windows() {

@@ -10,6 +10,15 @@ Window {
     height: 300
     title: "EduStore connection"
 
+    Component.onCompleted: {
+        var s = controller.loadDatabaseSettings()
+        if (s.host !== "") hostnameField.text = s.host
+        if (s.port !== "") portField.text = s.port
+        if (s.name !== "") nameField.text = s.name
+        if (s.user !== "") userField.text = s.user
+        if (s.password !== "") passwordField.text = s.password
+    }
+
     GridLayout {
         anchors.fill: parent
         anchors.margins: 10
@@ -114,6 +123,7 @@ Window {
 
                 root.performanceStartTime = Date.now();
                 controller.connect(db_host, db_name, db_port , db_user, db_password)
+                controller.saveDatabaseSettings(hostnameField.text, portField.text, nameField.text, userField.text, passwordField.text)
                 root.performanceEndTime = Date.now();
                 const databaseConnectionDuration = root.performanceEndTime - root.performanceStartTime
                 console.log("Database connection took " + databaseConnectionDuration + " ms")
