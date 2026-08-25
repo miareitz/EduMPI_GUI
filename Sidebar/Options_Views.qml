@@ -184,7 +184,7 @@ Rectangle {
             Rectangle {
                 id: communication_lines_checker
                 width: parent.width
-                height: 100
+                height: 130
                 color: "transparent"
                 Layout.alignment: Qt.AlignHCenter
                 visible: three_d_check.checked
@@ -352,6 +352,50 @@ Rectangle {
                             color: "#999999"
                             Layout.alignment: Qt.AlignVCenter
                             //Layout.fillHeight: true
+                        }
+
+                    }
+                    Row {
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Switch {
+                            id: osclines
+                            HoverHandler {
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            indicator: Rectangle{
+                                radius: 13
+                                color: osclines.checked ? "blue" : "#999999"
+                                implicitHeight: 20
+                                implicitWidth:  40
+                                x: osclines.width - width - osclines.rightPadding
+                                y: parent.height / 2 - height /2
+                                border.color: "#999999"
+
+                                Rectangle {
+                                    x: osclines.checked ? parent.width - width : 0
+                                    width: 20
+                                    height: 20
+                                    radius: 13
+                                    border.color: "#999999"
+                                }
+                            }
+
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.rightMargin: 40
+                            checked: onesided
+
+                            onCheckedChanged: {
+                                onesided = checked
+                            }
+                        }
+                        Text {
+                            text: "One-Sided arrows"
+                            color: "#999999"
+                            Layout.alignment: Qt.AlignVCenter
                         }
 
                     }
