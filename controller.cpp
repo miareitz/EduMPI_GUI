@@ -9,6 +9,8 @@
 #include <qdatetime.h>
 #include <QMetaObject>
 #include <QSettings>
+#include <QSqlQuery>
+#include <QSqlError>
 
 #include <unistd.h>
 #include <csignal>
@@ -636,6 +638,40 @@ QVariantMap Controller::loadDatabaseSettings(){
     map["user"] = settings.value("db/user", "").toString();
     map["password"] = settings.value("db/password", "").toString();
     return map;
+}
+
+QVariantList Controller::getRunHistory(int slurmId, int limit){
+    QVariantList history;
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return history;
+    }
+    QSqlQuery query(db);
+    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype FROM edumpi_running_data WHERE edumpi_run_id = :id ORDER BY time_start ASC";
+    if (limit > 0) {
+        q += " LIMIT :limit";
+    }
+    query.prepare(q);
+    query.bindValue(":id", slurmId);
+    if (limit > 0) {
+        query.bindValue(":limit", limit);
+    }
+    if (!query.exec()) {
+        qWarning() << "History query failed:" << query.lastError().text();
+        return history;
+    }
+    while (query.next()) {
+        QVariantMap row;
+        row["time"] = query.value(0).toDateTime().toString("HH:mm:ss.zzz");
+        row["rank"] = query.value(1).toInt();
+        row["function"] = query.value(2).toString();
+        row["partner"] = query.value(3).toInt();
+        row["send"] = query.value(4).toLongLong();
+        row["recv"] = query.value(5).toLongLong();
+        row["type"] = query.value(6).toString();
+        history.append(row);
+    }
+    return history;
 }
 
 QVariantList Controller::open_job_windows() {

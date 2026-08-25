@@ -4,6 +4,7 @@
         <file>Cores2D.qml</file>
         <file>Cores3D.qml</file>
         <file>CoresCommunicationMatrix.qml</file>
+        <file>History.qml</file>
         <file>Menu_Bar.qml</file>
         <file>Bottom_Bar.qml</file>
         <file>Cluster_Connection_Formular.qml</file>

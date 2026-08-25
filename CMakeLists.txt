@@ -80,6 +80,7 @@ qt_add_qml_module(appGUI_Cluster
         Cores2D.qml
         Cores3D.qml
         CoresCommunicationMatrix.qml
+        History.qml
         Menu_Bar.qml
         Bottom_Bar.qml
         Cluster_Connection_Formular.qml

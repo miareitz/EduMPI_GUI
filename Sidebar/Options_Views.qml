@@ -112,6 +112,24 @@ Rectangle {
                     //cm_check.checked = !two_d_check.checked && !three_d_check.checked
                 }
             }
+            CheckBox {
+                id: history_check
+                ButtonGroup.group: checkboxgroup
+                HoverHandler {
+                    cursorShape: Qt.PointingHandCursor
+                }
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 40
+                checked: false
+                text: qsTr("Operation History")
+                onCheckStateChanged: {
+                    if(checked){
+                        selected_screen = "History"
+                        view.replace("/History.qml", {listNodes : nodesList})
+                    }
+                }
+            }
 
 
             Rectangle {
