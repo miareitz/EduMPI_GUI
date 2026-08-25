@@ -640,14 +640,18 @@ QVariantMap Controller::loadDatabaseSettings(){
     return map;
 }
 
-QVariantList Controller::getRunHistory(int slurmId, int limit){
+QVariantList Controller::getRunHistory(int slurmId, int limit, bool hideSelf){
     QVariantList history;
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.isOpen()) {
         return history;
     }
     QSqlQuery query(db);
-    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype FROM edumpi_running_data WHERE edumpi_run_id = :id ORDER BY time_start ASC";
+    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    if (hideSelf) {
+        q += " AND partnerrank != processrank";
+    }
+    q += " ORDER BY time_start ASC";
     if (limit > 0) {
         q += " LIMIT :limit";
     }

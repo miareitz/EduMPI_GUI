@@ -9,10 +9,11 @@ Rectangle {
     property var listNodes: null
     property var rows: []
     property int limit: 0
+    property bool hideSelf: true
 
     function reload() {
         if (listNodes && listNodes.slurm_id > 0) {
-            rows = controller.getRunHistory(listNodes.slurm_id, limit)
+            rows = controller.getRunHistory(listNodes.slurm_id, limit, hideSelf)
         }
     }
 
@@ -27,6 +28,16 @@ Rectangle {
             text: "Operation history  (" + rows.length + " events, in recording order)"
             color: "#00FF00"
             font.pointSize: 12
+        }
+
+        CheckBox {
+            id: hideSelfCheck
+            text: "Hide self-directed operations (partner = own rank)"
+            checked: hideSelf
+            onCheckedChanged: {
+                hideSelf = checked
+                reload()
+            }
         }
 
         RowLayout {
