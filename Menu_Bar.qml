@@ -47,7 +47,7 @@ Item {
                 text: "<font color=\"white\">Load EduMPI-Run from DB</font>"
                 onTriggered: {
                     var component, window;
-                    if(controller.db_connection && controller.cluster_connection){
+                    if(controller.db_connection){
                         var fd_id = controller.getClusterIdent();
                         //controller.getJobTable().loadJobs(fd_id);
 

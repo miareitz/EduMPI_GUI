@@ -46,9 +46,7 @@ void Controller::connect(QString hostname, QString databasename, int port, QStri
 
     m_connection_ready = connect;
     m_job_table = new Table_UserID();
-    if(!m_cluster_ident.isEmpty()){
-        m_job_table->loadJobs(m_cluster_ident);
-    }
+    m_job_table->loadJobs(m_cluster_ident);
     emit connectionSignal(connect);
 }
 

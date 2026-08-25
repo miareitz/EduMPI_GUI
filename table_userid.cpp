@@ -29,9 +29,15 @@ void Table_UserID::loadJobs(const QString &userId){
         return;
     }
     QSqlQuery query(db);
-    query.prepare("SELECT edumpi_run_id, start_time, end_time, program_name FROM edumpi_runs WHERE (user_id = :user_id OR user_id = 'all_users') ORDER BY edumpi_run_id");
-    query.bindValue(":user_id", userId);
-    query.exec();
+    QString queryString = "SELECT edumpi_run_id, start_time, end_time, program_name FROM edumpi_runs";
+    if (!userId.isEmpty()) {
+        queryString += " WHERE (user_id = :user_id OR user_id = 'all_users')";
+    }
+    queryString += " ORDER BY edumpi_run_id";
+    query.prepare(queryString);
+    if (!userId.isEmpty()) {
+        query.bindValue(":user_id", userId);
+    }
 
     if (!query.exec()) {
         qWarning() << "Query failed: " << query.lastError();
