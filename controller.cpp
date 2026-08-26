@@ -652,7 +652,7 @@ QVariantList Controller::getRunHistory(int slurmId, int limit, bool hideSelf){
         limit = 20000;
     }
     QSqlQuery query(db);
-    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype, time_diff FROM edumpi_running_data WHERE edumpi_run_id = :id";
     if (hideSelf) {
         q += " AND partnerrank != processrank";
     }
@@ -673,9 +673,38 @@ QVariantList Controller::getRunHistory(int slurmId, int limit, bool hideSelf){
         row["send"] = query.value(4).toLongLong();
         row["recv"] = query.value(5).toLongLong();
         row["type"] = query.value(6).toString();
+        row["duration"] = query.value(7).toDouble();
         history.append(row);
     }
     return history;
+}
+
+QVariantList Controller::getWaitTimeSummary(int slurmId, bool hideSelf){
+    QVariantList summary;
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return summary;
+    }
+    QSqlQuery query(db);
+    QString q = "SELECT \"function\", SUM(time_diff) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    if (hideSelf) {
+        q += " AND partnerrank != processrank";
+    }
+    q += " GROUP BY \"function\" ORDER BY total_time DESC";
+    query.prepare(q);
+    query.bindValue(":id", slurmId);
+    if (!query.exec()) {
+        qWarning() << "Wait-time summary query failed:" << query.lastError().text();
+        return summary;
+    }
+    while (query.next()) {
+        QVariantMap row;
+        row["function"] = query.value(0).toString();
+        row["time"] = query.value(1).toDouble();
+        row["count"] = query.value(2).toLongLong();
+        summary.append(row);
+    }
+    return summary;
 }
 
 QVariantList Controller::open_job_windows() {
