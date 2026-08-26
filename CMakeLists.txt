@@ -100,6 +100,8 @@ qt_add_qml_module(appGUI_Cluster
     SOURCES
         controller.cpp
         controller.h
+        run_history_model.cpp
+        run_history_model.h
         cluster_architecture.cpp
         cluster_architecture.h
         detailed_p2p_data.h

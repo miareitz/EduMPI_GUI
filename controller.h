@@ -6,6 +6,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <bash_process_manager.h>
 #include "table_userid.h"
+#include "run_history_model.h"
 //#include <QVariantList>
 
 #include <QtQml/qqmlregistration.h>
@@ -22,6 +23,7 @@ class Controller : public QObject
     Q_PROPERTY(bool db_connection  MEMBER m_connection_ready NOTIFY connectionChanged)
     Q_PROPERTY(bool cluster_connection MEMBER m_cluster_connection_ready NOTIFY clusterConnectionChanged)
     Q_PROPERTY(QVariantList open_job_windows MEMBER m_open_job_windows READ open_job_windows NOTIFY open_job_windowsChanged)
+    Q_PROPERTY(QObject* runHistoryModel READ runHistoryModel CONSTANT)
     //Q_PROPERTY(int time_display MEMBER m_time_display NOTIFY time_display_changed)
 
 public:
@@ -76,7 +78,8 @@ public:
 
     Q_INVOKABLE void saveDatabaseSettings(const QString &host, const QString &port, const QString &db, const QString &user, const QString &password);
     Q_INVOKABLE QVariantMap loadDatabaseSettings();
-    Q_INVOKABLE QVariantList getRunHistory(int slurmId, int limit, bool hideSelf);
+    Q_INVOKABLE void loadRunHistory(int slurmId, bool hideSelf);
+    QObject* runHistoryModel() const;
     Q_INVOKABLE QVariantList getWaitTimeSummary(int slurmId, bool hideSelf);
     Q_INVOKABLE QVariantList getWaitTimeByRank(int slurmId, bool hideSelf);
     Q_INVOKABLE QVariantList getWaitTimeTimeline(int slurmId, bool hideSelf, int bucketCount);
@@ -154,6 +157,7 @@ private:
     bool m_status_running=false;
 
     Table_UserID *m_job_table;
+    RunHistoryModel *m_runHistoryModel;
     QVariantList m_open_job_windows;
 
 protected:

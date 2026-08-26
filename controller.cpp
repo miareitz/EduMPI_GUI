@@ -26,6 +26,8 @@ Controller::Controller(QObject *parent) : QObject(parent)
     QObject::connect(slurm_process, &Bash_Process_Manager::slotEndTime, this, &Controller::slotEndTime);
 
     m_connectionName = "mainConnection";
+    m_runHistoryModel = new RunHistoryModel(this);
+    m_runHistoryModel->setConnectionName(m_connectionName);
 }
 
 void Controller::connect(QString hostname, QString databasename, int port, QString username, QString password){
@@ -640,43 +642,14 @@ QVariantMap Controller::loadDatabaseSettings(){
     return map;
 }
 
-QVariantList Controller::getRunHistory(int slurmId, int limit, bool hideSelf){
-    QVariantList history;
-    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
-    if (!db.isOpen()) {
-        return history;
+void Controller::loadRunHistory(int slurmId, bool hideSelf){
+    if (m_runHistoryModel) {
+        m_runHistoryModel->setRunQuery(slurmId, hideSelf);
     }
-    // Guard against loading an unbounded number of rows (e.g. self-directed
-    // one-sided ops can number in the hundreds of thousands), which crashes the GUI.
-    if (limit <= 0) {
-        limit = 20000;
-    }
-    QSqlQuery query(db);
-    QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype, time_diff FROM edumpi_running_data WHERE edumpi_run_id = :id";
-    if (hideSelf) {
-        q += " AND partnerrank != processrank";
-    }
-    q += " ORDER BY time_start ASC LIMIT :limit";
-    query.prepare(q);
-    query.bindValue(":id", slurmId);
-    query.bindValue(":limit", limit);
-    if (!query.exec()) {
-        qWarning() << "History query failed:" << query.lastError().text();
-        return history;
-    }
-    while (query.next()) {
-        QVariantMap row;
-        row["time"] = query.value(0).toDateTime().toString("HH:mm:ss.zzz");
-        row["rank"] = query.value(1).toInt();
-        row["function"] = query.value(2).toString();
-        row["partner"] = query.value(3).toInt();
-        row["send"] = query.value(4).toLongLong();
-        row["recv"] = query.value(5).toLongLong();
-        row["type"] = query.value(6).toString();
-        row["duration"] = query.value(7).toDouble();
-        history.append(row);
-    }
-    return history;
+}
+
+QObject* Controller::runHistoryModel() const {
+    return m_runHistoryModel;
 }
 
 QVariantList Controller::getWaitTimeSummary(int slurmId, bool hideSelf){

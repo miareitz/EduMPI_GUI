@@ -7,12 +7,11 @@ Rectangle {
     color: "#2b2b2b"
 
     property var listNodes: null
-    property var rows: []
     property var summary: []
     property var byRank: []
     property var timeline: []
+    property int eventCount: 0
     property real maxTime: 0
-    property int limit: 20000
     property int timelineBuckets: 100
     property bool hideSelf: true
 
@@ -24,7 +23,8 @@ Rectangle {
 
     function reload() {
         if (listNodes && listNodes.slurm_id > 0) {
-            rows = controller.getRunHistory(listNodes.slurm_id, limit, hideSelf)
+            controller.loadRunHistory(listNodes.slurm_id, hideSelf)
+            eventCount = controller.runHistoryModel ? controller.runHistoryModel.count() : 0
             summary = controller.getWaitTimeSummary(listNodes.slurm_id, hideSelf)
             byRank = controller.getWaitTimeByRank(listNodes.slurm_id, hideSelf)
             timeline = controller.getWaitTimeTimeline(listNodes.slurm_id, hideSelf, timelineBuckets)
@@ -44,7 +44,7 @@ Rectangle {
         spacing: 4
 
         Text {
-            text: "Operation history  (" + rows.length + " events, in recording order" + (rows.length >= limit ? " — capped at " + limit : "") + ")"
+            text: "Operation history  (" + eventCount + " events, in recording order)"
             color: "#00FF00"
             font.pointSize: 12
         }
@@ -163,12 +163,14 @@ Rectangle {
             spacing: 4
             Text { text: "Time"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 90 }
             Text { text: "Rank"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 44 }
-            Text { text: "Function"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 200 }
-            Text { text: "Partner"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 60 }
-            Text { text: "Send"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 84 }
-            Text { text: "Recv"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 84 }
-            Text { text: "Type"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 100 }
-            Text { text: "Duration"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 90 }
+            Text { text: "Function"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 170 }
+            Text { text: "Partner"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 55 }
+            Text { text: "Send"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 70 }
+            Text { text: "Recv"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 70 }
+            Text { text: "Type"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 90 }
+            Text { text: "Duration"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 85 }
+            Text { text: "Disp"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 55 }
+            Text { text: "Window"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 95 }
         }
 
         ListView {
@@ -176,7 +178,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            model: rows
+            model: controller.runHistoryModel
             ScrollBar.vertical: ScrollBar { }
 
             delegate: Rectangle {
@@ -187,14 +189,16 @@ Rectangle {
                 RowLayout {
                     anchors.fill: parent
                     spacing: 4
-                    Text { text: modelData.time; color: "#cccccc"; Layout.preferredWidth: 90; elide: Text.ElideRight }
-                    Text { text: modelData.rank; color: "white"; Layout.preferredWidth: 44 }
-                    Text { text: modelData.function; color: "white"; Layout.preferredWidth: 200; elide: Text.ElideRight }
-                    Text { text: modelData.partner; color: "white"; Layout.preferredWidth: 60 }
-                    Text { text: modelData.send; color: "#88cc88"; Layout.preferredWidth: 84; horizontalAlignment: Text.AlignRight }
-                    Text { text: modelData.recv; color: "#cc8888"; Layout.preferredWidth: 84; horizontalAlignment: Text.AlignRight }
-                    Text { text: modelData.type; color: "#88aacc"; Layout.preferredWidth: 100; elide: Text.ElideRight }
-                    Text { text: root.fmtDuration(modelData.duration); color: "#ffcc00"; Layout.preferredWidth: 90; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.time; color: "#cccccc"; Layout.preferredWidth: 90; elide: Text.ElideRight }
+                    Text { text: model.rank; color: "white"; Layout.preferredWidth: 44 }
+                    Text { text: model.func; color: "white"; Layout.preferredWidth: 170; elide: Text.ElideRight }
+                    Text { text: model.partner; color: "white"; Layout.preferredWidth: 55 }
+                    Text { text: model.send; color: "#88cc88"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.recv; color: "#cc8888"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.type; color: "#88aacc"; Layout.preferredWidth: 90; elide: Text.ElideRight }
+                    Text { text: model.duration; color: "#ffcc00"; Layout.preferredWidth: 85; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.displacement; color: "#ccaa88"; Layout.preferredWidth: 55; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.window; color: "#aaddcc"; Layout.preferredWidth: 95; elide: Text.ElideRight }
                 }
             }
         }
