@@ -14,6 +14,7 @@ Rectangle {
     property real maxTime: 0
     property int timelineBuckets: 100
     property bool hideSelf: true
+    property double programDuration: 0
 
     function fmtDuration(sec) {
         if (sec >= 1) return sec.toFixed(3) + " s"
@@ -21,10 +22,16 @@ Rectangle {
         return (sec * 1000000).toFixed(1) + " µs"
     }
 
+    function percent(sec) {
+        if (programDuration <= 0) return ""
+        return (sec / programDuration * 100).toFixed(1) + "%"
+    }
+
     function reload() {
         if (listNodes && listNodes.slurm_id > 0) {
             controller.loadRunHistory(listNodes.slurm_id, hideSelf)
             eventCount = controller.runHistoryModel ? controller.runHistoryModel.count() : 0
+            programDuration = controller.getProgramDuration(listNodes.slurm_id)
             summary = controller.getWaitTimeSummary(listNodes.slurm_id, hideSelf)
             byRank = controller.getWaitTimeByRank(listNodes.slurm_id, hideSelf)
             timeline = controller.getWaitTimeTimeline(listNodes.slurm_id, hideSelf, timelineBuckets)
@@ -44,7 +51,7 @@ Rectangle {
         spacing: 4
 
         Text {
-            text: "Operation history  (" + eventCount + " events, in recording order)"
+            text: "Operation history  (" + eventCount + " events)  —  program time " + root.fmtDuration(programDuration)
             color: "#00FF00"
             font.pointSize: 12
         }
@@ -87,8 +94,9 @@ Rectangle {
                         height: 20
                         spacing: 4
                         Text { text: modelData.function; color: "white"; Layout.fillWidth: true; elide: Text.ElideRight; font.pixelSize: 11 }
-                        Text { text: "×" + modelData.count; color: "#aaaaaa"; Layout.preferredWidth: 48; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
-                        Text { text: root.fmtDuration(modelData.time); color: "#ffcc00"; Layout.preferredWidth: 78; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                        Text { text: "×" + modelData.count; color: "#aaaaaa"; Layout.preferredWidth: 44; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                        Text { text: root.fmtDuration(modelData.time); color: "#ffcc00"; Layout.preferredWidth: 72; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                        Text { text: root.percent(modelData.time); color: "#88cc88"; Layout.preferredWidth: 46; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
                     }
                 }
             }

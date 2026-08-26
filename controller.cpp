@@ -659,7 +659,7 @@ QVariantList Controller::getWaitTimeSummary(int slurmId, bool hideSelf){
         return summary;
     }
     QSqlQuery query(db);
-    QString q = "SELECT \"function\", SUM(time_diff) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    QString q = "SELECT \"function\", SUM(CASE WHEN time_diff >= 0 THEN time_diff ELSE 0 END) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
     if (hideSelf) {
         q += " AND partnerrank != processrank";
     }
@@ -687,7 +687,7 @@ QVariantList Controller::getWaitTimeByRank(int slurmId, bool hideSelf){
         return ranks;
     }
     QSqlQuery query(db);
-    QString q = "SELECT processrank, SUM(time_diff) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    QString q = "SELECT processrank, SUM(CASE WHEN time_diff >= 0 THEN time_diff ELSE 0 END) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
     if (hideSelf) {
         q += " AND partnerrank != processrank";
     }
@@ -737,7 +737,7 @@ QVariantList Controller::getWaitTimeTimeline(int slurmId, bool hideSelf, int buc
     }
 
     QSqlQuery q(db);
-    q.prepare(QString("SELECT width_bucket(EXTRACT(EPOCH FROM time_start), :t0, :t1, :buckets) AS bucket, SUM(time_diff) AS total_time FROM edumpi_running_data WHERE edumpi_run_id = :id%1 GROUP BY bucket ORDER BY bucket ASC").arg(selfFilter));
+    q.prepare(QString("SELECT width_bucket(EXTRACT(EPOCH FROM time_start), :t0, :t1, :buckets) AS bucket, SUM(CASE WHEN time_diff >= 0 THEN time_diff ELSE 0 END) AS total_time FROM edumpi_running_data WHERE edumpi_run_id = :id%1 GROUP BY bucket ORDER BY bucket ASC").arg(selfFilter));
     q.bindValue(":t0", t0);
     q.bindValue(":t1", t1);
     q.bindValue(":buckets", bucketCount);
@@ -753,6 +753,39 @@ QVariantList Controller::getWaitTimeTimeline(int slurmId, bool hideSelf, int buc
         timeline.append(row);
     }
     return timeline;
+}
+
+double Controller::getProgramDuration(int slurmId){
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return 0.0;
+    }
+    {
+        QSqlQuery q(db);
+        q.prepare("SELECT EXTRACT(EPOCH FROM (end_time - start_time)) FROM edumpi_runs WHERE edumpi_run_id = :id");
+        q.bindValue(":id", slurmId);
+        if (q.exec() && q.next()) {
+            bool ok = false;
+            double d = q.value(0).toDouble(&ok);
+            if (ok && d > 0.0) {
+                return d;
+            }
+        }
+    }
+    {
+        // Fallback: span of the instrumented events.
+        QSqlQuery q(db);
+        q.prepare("SELECT MAX(EXTRACT(EPOCH FROM time_end)) - MIN(EXTRACT(EPOCH FROM time_start)) FROM edumpi_running_data WHERE edumpi_run_id = :id");
+        q.bindValue(":id", slurmId);
+        if (q.exec() && q.next()) {
+            bool ok = false;
+            double d = q.value(0).toDouble(&ok);
+            if (ok && d > 0.0) {
+                return d;
+            }
+        }
+    }
+    return 0.0;
 }
 
 QVariantList Controller::open_job_windows() {
