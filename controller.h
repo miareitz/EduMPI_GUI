@@ -78,6 +78,8 @@ public:
     Q_INVOKABLE QVariantMap loadDatabaseSettings();
     Q_INVOKABLE QVariantList getRunHistory(int slurmId, int limit, bool hideSelf);
     Q_INVOKABLE QVariantList getWaitTimeSummary(int slurmId, bool hideSelf);
+    Q_INVOKABLE QVariantList getWaitTimeByRank(int slurmId, bool hideSelf);
+    Q_INVOKABLE QVariantList getWaitTimeTimeline(int slurmId, bool hideSelf, int bucketCount);
 
     Q_INVOKABLE bool copyEnvFile();
 

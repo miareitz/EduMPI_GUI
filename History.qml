@@ -9,7 +9,11 @@ Rectangle {
     property var listNodes: null
     property var rows: []
     property var summary: []
+    property var byRank: []
+    property var timeline: []
+    property real maxTime: 0
     property int limit: 20000
+    property int timelineBuckets: 100
     property bool hideSelf: true
 
     function fmtDuration(sec) {
@@ -22,6 +26,13 @@ Rectangle {
         if (listNodes && listNodes.slurm_id > 0) {
             rows = controller.getRunHistory(listNodes.slurm_id, limit, hideSelf)
             summary = controller.getWaitTimeSummary(listNodes.slurm_id, hideSelf)
+            byRank = controller.getWaitTimeByRank(listNodes.slurm_id, hideSelf)
+            timeline = controller.getWaitTimeTimeline(listNodes.slurm_id, hideSelf, timelineBuckets)
+            var m = 0
+            for (var i = 0; i < timeline.length; i++) {
+                if (timeline[i].time > m) m = timeline[i].time
+            }
+            maxTime = m
         }
     }
 
@@ -48,35 +59,102 @@ Rectangle {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+
+                Text {
+                    text: "Total time in MPI calls, by function"
+                    visible: summary.length > 0
+                    color: "#ffcc00"
+                    font.pointSize: 10
+                    font.bold: true
+                }
+
+                ListView {
+                    id: functionList
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(summary.length, 6) * 21
+                    visible: summary.length > 0
+                    clip: true
+                    model: summary
+                    delegate: RowLayout {
+                        width: functionList.width
+                        height: 20
+                        spacing: 4
+                        Text { text: modelData.function; color: "white"; Layout.fillWidth: true; elide: Text.ElideRight; font.pixelSize: 11 }
+                        Text { text: "×" + modelData.count; color: "#aaaaaa"; Layout.preferredWidth: 48; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                        Text { text: root.fmtDuration(modelData.time); color: "#ffcc00"; Layout.preferredWidth: 78; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+
+                Text {
+                    text: "Total time by rank"
+                    visible: byRank.length > 0
+                    color: "#ffcc00"
+                    font.pointSize: 10
+                    font.bold: true
+                }
+
+                ListView {
+                    id: rankList
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(byRank.length, 6) * 21
+                    visible: byRank.length > 0
+                    clip: true
+                    model: byRank
+                    delegate: RowLayout {
+                        width: rankList.width
+                        height: 20
+                        spacing: 4
+                        Text { text: "Rank " + modelData.rank; color: "white"; Layout.preferredWidth: 64; font.pixelSize: 11 }
+                        Text { text: "×" + modelData.count; color: "#aaaaaa"; Layout.preferredWidth: 48; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                        Text { text: root.fmtDuration(modelData.time); color: "#ffcc00"; Layout.fillWidth: true; horizontalAlignment: Text.AlignRight; font.pixelSize: 11 }
+                    }
+                }
+            }
+        }
+
         Text {
-            text: "Total time in MPI calls, by function"
-            visible: summary.length > 0
+            text: "Wait time over run"
+            visible: timeline.length > 0
             color: "#ffcc00"
-            font.pointSize: 11
+            font.pointSize: 10
             font.bold: true
         }
 
-        ListView {
-            id: summaryList
+        Item {
+            id: timelinePlot
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(summary.length, 8) * 22
-            visible: summary.length > 0
-            clip: true
-            model: summary
-            ScrollBar.vertical: ScrollBar { }
+            Layout.preferredHeight: 100
+            visible: timeline.length > 0
 
-            delegate: Rectangle {
-                width: summaryList.width
-                height: 22
-                color: index % 2 === 0 ? "#3a3a30" : "#2f2f28"
-
-                RowLayout {
-                    anchors.fill: parent
-                    spacing: 4
-                    Text { text: modelData.function; color: "white"; Layout.preferredWidth: 220; elide: Text.ElideRight }
-                    Text { text: "× " + modelData.count; color: "#aaaaaa"; Layout.preferredWidth: 90 }
-                    Text { text: root.fmtDuration(modelData.time); color: "#ffcc00"; Layout.fillWidth: true; horizontalAlignment: Text.AlignRight }
+            Repeater {
+                model: timeline
+                delegate: Rectangle {
+                    x: (modelData.bucket - 1) * (timelinePlot.width / root.timelineBuckets)
+                    width: Math.max(1, timelinePlot.width / root.timelineBuckets - 1)
+                    height: root.maxTime > 0 ? Math.max(1, (modelData.time / root.maxTime) * timelinePlot.height) : 0
+                    y: timelinePlot.height - height
+                    color: "#ffaa00"
                 }
+            }
+
+            Text {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                text: "peak " + root.fmtDuration(root.maxTime) + " / bucket"
+                color: "#aaaaaa"
+                font.pixelSize: 10
             }
         }
 

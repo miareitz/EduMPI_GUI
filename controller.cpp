@@ -707,6 +707,81 @@ QVariantList Controller::getWaitTimeSummary(int slurmId, bool hideSelf){
     return summary;
 }
 
+QVariantList Controller::getWaitTimeByRank(int slurmId, bool hideSelf){
+    QVariantList ranks;
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return ranks;
+    }
+    QSqlQuery query(db);
+    QString q = "SELECT processrank, SUM(time_diff) AS total_time, COUNT(*) AS cnt FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    if (hideSelf) {
+        q += " AND partnerrank != processrank";
+    }
+    q += " GROUP BY processrank ORDER BY processrank ASC";
+    query.prepare(q);
+    query.bindValue(":id", slurmId);
+    if (!query.exec()) {
+        qWarning() << "Wait-time-by-rank query failed:" << query.lastError().text();
+        return ranks;
+    }
+    while (query.next()) {
+        QVariantMap row;
+        row["rank"] = query.value(0).toInt();
+        row["time"] = query.value(1).toDouble();
+        row["count"] = query.value(2).toLongLong();
+        ranks.append(row);
+    }
+    return ranks;
+}
+
+QVariantList Controller::getWaitTimeTimeline(int slurmId, bool hideSelf, int bucketCount){
+    QVariantList timeline;
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return timeline;
+    }
+    if (bucketCount <= 0) {
+        bucketCount = 100;
+    }
+    QString selfFilter = hideSelf ? " AND partnerrank != processrank" : "";
+
+    double t0 = 0.0, t1 = 0.0;
+    {
+        QSqlQuery q(db);
+        q.prepare(QString("SELECT MIN(EXTRACT(EPOCH FROM time_start)), MAX(EXTRACT(EPOCH FROM time_start)) FROM edumpi_running_data WHERE edumpi_run_id = :id%1").arg(selfFilter));
+        q.bindValue(":id", slurmId);
+        if (!q.exec() || !q.next()) {
+            return timeline;
+        }
+        t0 = q.value(0).toDouble();
+        t1 = q.value(1).toDouble();
+    }
+    if (t1 <= t0) {
+        t1 = t0 + 1e-6;
+    } else {
+        t1 += 1e-6;
+    }
+
+    QSqlQuery q(db);
+    q.prepare(QString("SELECT width_bucket(EXTRACT(EPOCH FROM time_start), :t0, :t1, :buckets) AS bucket, SUM(time_diff) AS total_time FROM edumpi_running_data WHERE edumpi_run_id = :id%1 GROUP BY bucket ORDER BY bucket ASC").arg(selfFilter));
+    q.bindValue(":t0", t0);
+    q.bindValue(":t1", t1);
+    q.bindValue(":buckets", bucketCount);
+    q.bindValue(":id", slurmId);
+    if (!q.exec()) {
+        qWarning() << "Wait-time timeline query failed:" << q.lastError().text();
+        return timeline;
+    }
+    while (q.next()) {
+        QVariantMap row;
+        row["bucket"] = q.value(0).toInt();
+        row["time"] = q.value(1).toDouble();
+        timeline.append(row);
+    }
+    return timeline;
+}
+
 QVariantList Controller::open_job_windows() {
     return m_open_job_windows;
 }
