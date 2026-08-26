@@ -166,19 +166,19 @@ Rectangle {
             }
         }
 
-        RowLayout {
+        Row {
             Layout.fillWidth: true
             spacing: 4
-            Text { text: "Time"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 90 }
-            Text { text: "Rank"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 44 }
-            Text { text: "Function"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 170 }
-            Text { text: "Partner"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 55 }
-            Text { text: "Send"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 70 }
-            Text { text: "Recv"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 70 }
-            Text { text: "Type"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 90 }
-            Text { text: "Duration"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 85 }
-            Text { text: "Disp"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 55 }
-            Text { text: "Window"; color: "#00FF00"; font.bold: true; Layout.preferredWidth: 95 }
+            Text { text: "Time"; width: 90; color: "#00FF00"; font.bold: true }
+            Text { text: "Rank"; width: 44; color: "#00FF00"; font.bold: true }
+            Text { text: "Function"; width: 170; color: "#00FF00"; font.bold: true }
+            Text { text: "Partner"; width: 55; color: "#00FF00"; font.bold: true }
+            Text { text: "Send"; width: 70; color: "#00FF00"; font.bold: true }
+            Text { text: "Recv"; width: 70; color: "#00FF00"; font.bold: true }
+            Text { text: "Type"; width: 90; color: "#00FF00"; font.bold: true }
+            Text { text: "Duration"; width: 85; color: "#00FF00"; font.bold: true }
+            Text { text: "Disp"; width: 55; color: "#00FF00"; font.bold: true }
+            Text { text: "Window"; width: 130; color: "#00FF00"; font.bold: true }
         }
 
         ListView {
@@ -194,19 +194,19 @@ Rectangle {
                 height: 22
                 color: index % 2 === 0 ? "#3a3a3a" : "#2f2f2f"
 
-                RowLayout {
+                Row {
                     anchors.fill: parent
                     spacing: 4
-                    Text { text: model.time; color: "#cccccc"; Layout.preferredWidth: 90; elide: Text.ElideRight }
-                    Text { text: model.rank; color: "white"; Layout.preferredWidth: 44 }
-                    Text { text: model.func; color: "white"; Layout.preferredWidth: 170; elide: Text.ElideRight }
-                    Text { text: model.partner; color: "white"; Layout.preferredWidth: 55 }
-                    Text { text: model.send; color: "#88cc88"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
-                    Text { text: model.recv; color: "#cc8888"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
-                    Text { text: model.type; color: "#88aacc"; Layout.preferredWidth: 90; elide: Text.ElideRight }
-                    Text { text: model.duration; color: "#ffcc00"; Layout.preferredWidth: 85; horizontalAlignment: Text.AlignRight }
-                    Text { text: model.displacement; color: "#ccaa88"; Layout.preferredWidth: 55; horizontalAlignment: Text.AlignRight }
-                    Text { text: model.window; color: "#aaddcc"; Layout.preferredWidth: 95; elide: Text.ElideRight }
+                    Text { text: model.time; width: 90; color: "#cccccc"; elide: Text.ElideRight }
+                    Text { text: model.rank; width: 44; color: "white" }
+                    Text { text: model.func; width: 170; color: "white"; elide: Text.ElideRight }
+                    Text { text: model.partner; width: 55; color: "white" }
+                    Text { text: model.send; width: 70; color: "#88cc88"; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.recv; width: 70; color: "#cc8888"; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.type; width: 90; color: "#88aacc"; elide: Text.ElideRight }
+                    Text { text: model.duration; width: 85; color: "#ffcc00"; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.displacement; width: 55; color: "#ccaa88"; horizontalAlignment: Text.AlignRight }
+                    Text { text: model.window; width: 130; color: "#aaddcc" }
                 }
             }
         }
