@@ -416,7 +416,9 @@ Rectangle {
                     }
                     Component.onCompleted: {
                         var f = rectangle.functionOrder[index]
-                        oneSidedMat.diffuseColor = rectangle.oneSidedColor(f)
+                        var col = rectangle.oneSidedColor(f)
+                        oneSidedMat.diffuseColor = col
+                        oneSidedMat.emissiveFactor = rectangle.oneSidedEmissive(col)
                         var lines = rectangle.linesByFunction[f]
                         if (lines !== undefined) {
                             for (var i = 0; i < lines.length; i++) {
@@ -538,6 +540,16 @@ Rectangle {
             case "MPI_Win_free": return "#37474f"
             default: return "#616161"
         }
+    }
+
+    function oneSidedEmissive(hex) {
+        // Lines in QtQuick3D are not lit by diffuse alone; the emissive
+        // factor carries the visible color (scaled down from the hex RGB).
+        var r = parseInt(hex.substr(1, 2), 16) / 255.0
+        var g = parseInt(hex.substr(3, 2), 16) / 255.0
+        var b = parseInt(hex.substr(5, 2), 16) / 255.0
+        var s = 0.6
+        return Qt.vector3d(r * s, g * s, b * s)
     }
 
     // *** Funktionen für die Information Bar ***
