@@ -20,6 +20,7 @@ Rectangle {
 
     property var linesByFunction: ({})
     property var functionOrder: []
+    property real oneSidedOffset: 8.0
 
     onListNodesChanged: {
         updateCheckTimer.start()
@@ -421,8 +422,10 @@ Rectangle {
                         oneSidedMat.emissiveFactor = rectangle.oneSidedEmissive(col)
                         var lines = rectangle.linesByFunction[f]
                         if (lines !== undefined) {
+                            var total = rectangle.functionOrder.length
                             for (var i = 0; i < lines.length; i++) {
-                                oneSidedGeo.addLine(lines[i][0], lines[i][1])
+                                var p = rectangle.offsetLine(lines[i][0], lines[i][1], index, total, rectangle.oneSidedOffset)
+                                oneSidedGeo.addLine(p[0], p[1])
                             }
                             oneSidedGeo.newFrame()
                         }
@@ -550,6 +553,26 @@ Rectangle {
         var b = parseInt(hex.substr(5, 2), 16) / 255.0
         var s = 0.6
         return Qt.vector3d(r * s, g * s, b * s)
+    }
+
+    function offsetLine(start, end, idx, total, spacing) {
+        // Fan out arrows of the same proc->partner pair perpendicular to
+        // their direction so overlapping operations become distinguishable.
+        var dir = end.minus(start)
+        var len = dir.length()
+        if (len < 0.0001) {
+            return [start, end]
+        }
+        var d = dir.normalized()
+        var perp = d.crossProduct(Qt.vector3d(0, 1, 0))
+        if (perp.length() < 0.0001) {
+            perp = Qt.vector3d(0, 0, 1)
+        } else {
+            perp = perp.normalized()
+        }
+        var center = (total - 1) / 2.0
+        var off = perp.times((idx - center) * spacing)
+        return [start.plus(off), end.plus(off)]
     }
 
     // *** Funktionen für die Information Bar ***
