@@ -8,7 +8,7 @@ Rectangle {
 
     property var listNodes: null
     property var rows: []
-    property int limit: 0
+    property int limit: 20000
     property bool hideSelf: true
 
     function reload() {
@@ -25,7 +25,7 @@ Rectangle {
         spacing: 4
 
         Text {
-            text: "Operation history  (" + rows.length + " events, in recording order)"
+            text: "Operation history  (" + rows.length + " events, in recording order" + (rows.length >= limit ? " — capped at " + limit : "") + ")"
             color: "#00FF00"
             font.pointSize: 12
         }

@@ -646,20 +646,20 @@ QVariantList Controller::getRunHistory(int slurmId, int limit, bool hideSelf){
     if (!db.isOpen()) {
         return history;
     }
+    // Guard against loading an unbounded number of rows (e.g. self-directed
+    // one-sided ops can number in the hundreds of thousands), which crashes the GUI.
+    if (limit <= 0) {
+        limit = 20000;
+    }
     QSqlQuery query(db);
     QString q = "SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, communicationtype FROM edumpi_running_data WHERE edumpi_run_id = :id";
     if (hideSelf) {
         q += " AND partnerrank != processrank";
     }
-    q += " ORDER BY time_start ASC";
-    if (limit > 0) {
-        q += " LIMIT :limit";
-    }
+    q += " ORDER BY time_start ASC LIMIT :limit";
     query.prepare(q);
     query.bindValue(":id", slurmId);
-    if (limit > 0) {
-        query.bindValue(":limit", limit);
-    }
+    query.bindValue(":limit", limit);
     if (!query.exec()) {
         qWarning() << "History query failed:" << query.lastError().text();
         return history;
