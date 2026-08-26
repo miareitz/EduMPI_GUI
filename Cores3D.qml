@@ -17,7 +17,6 @@ Rectangle {
 
     property bool p2p_lines: p2p_send_lines
     property bool c_lines: coll_lines
-    property var annotationLabels: []
 
     onListNodesChanged: {
         updateCheckTimer.start()
@@ -47,7 +46,6 @@ Rectangle {
             }
             customGeoSend.newFrame()
             customGeoRecv.newFrame()
-            rebuildAnnotations()
         }
     }
 
@@ -88,7 +86,6 @@ Rectangle {
                 }
             }
             customGeoColl.newFrame()
-            rebuildAnnotations()
         }
     }
 
@@ -107,39 +104,7 @@ Rectangle {
                 }
             }
             customGeoOneSided.newFrame()
-            rebuildAnnotations()
         }
-    }
-
-    function rebuildAnnotations() {
-        var labels = []
-        if (arrow_annotation !== "none") {
-            var i, fn, pr, pa, s, e, mid
-            for (i = 0; i < p2pData.rowCount(); i++) {
-                fn = p2pData.simple_data(i, "function")
-                pr = p2pData.simple_data(i, "processrank")
-                pa = p2pData.simple_data(i, "partnerrank")
-                if (positionMap[pr] !== undefined && positionMap[pa] !== undefined) {
-                    s = positionMap[pr]
-                    e = positionMap[pa]
-                    mid = Qt.vector3d((s.x + e.x) / 2, (s.y + e.y) / 2, (s.z + e.z) / 2)
-                    labels.push({ pos: mid, text: arrow_annotation === "function" ? fn : ("to " + pa), kind: fn.indexOf("ecv") !== -1 ? "recv" : "send" })
-                }
-            }
-            for (i = 0; i < oscData.rowCount(); i++) {
-                fn = oscData.simple_data(i, "function")
-                pr = oscData.simple_data(i, "processrank")
-                pa = oscData.simple_data(i, "partnerrank")
-                if (pa < 0) continue
-                if (positionMap[pr] !== undefined && positionMap[pa] !== undefined) {
-                    s = positionMap[pr]
-                    e = positionMap[pa]
-                    mid = Qt.vector3d((s.x + e.x) / 2, (s.y + e.y) / 2, (s.z + e.z) / 2)
-                    labels.push({ pos: mid, text: arrow_annotation === "function" ? fn : ("to " + pa), kind: "osc" })
-                }
-            }
-        }
-        annotationLabels = labels
     }
 
     // *** Layout für Information Bar und 3D View ***
@@ -432,19 +397,6 @@ Rectangle {
                     depthDrawMode: Material.AlwaysDepthDraw
                     diffuseColor: "blue"
                     lineWidth: 1.0
-                }
-            }
-
-            Repeater3D {
-                model: annotationLabels
-                delegate: Text3D {
-                    text: modelData.text
-                    position: modelData.pos
-                    color: "#333333"
-                    font.pointSize: 14
-                    visible: (modelData.kind === "send" && p2p_send_lines) ||
-                             (modelData.kind === "recv" && p2p_recv_lines) ||
-                             (modelData.kind === "osc" && onesided)
                 }
             }
 

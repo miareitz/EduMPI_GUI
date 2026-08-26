@@ -202,7 +202,7 @@ Rectangle {
             Rectangle {
                 id: communication_lines_checker
                 width: parent.width
-                height: 180
+                height: 130
                 color: "transparent"
                 Layout.alignment: Qt.AlignHCenter
                 visible: three_d_check.checked
@@ -416,25 +416,6 @@ Rectangle {
                             Layout.alignment: Qt.AlignVCenter
                         }
 
-                    }
-                    Text {
-                        text: qsTr("Arrow annotation:")
-                        color: "#999999"
-                        Layout.alignment: Qt.AlignLeft
-                        Layout.leftMargin: 40
-                    }
-                    ComboBox {
-                        id: annotationCombo
-                        Layout.alignment: Qt.AlignLeft
-                        Layout.leftMargin: 40
-                        implicitWidth: 150
-                        model: ["None", "Function", "Partner rank"]
-                        currentIndex: 0
-                        onActivated: {
-                            if (currentIndex === 0) arrow_annotation = "none"
-                            else if (currentIndex === 1) arrow_annotation = "function"
-                            else arrow_annotation = "partner"
-                        }
                     }
                 }
             }
