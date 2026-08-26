@@ -56,6 +56,29 @@ Window {
     property bool p2p_recv_lines: false
     property bool coll_lines: false
 
+    property bool autoConnectPending: false
+
+    Component.onCompleted: {
+        // If the DB was configured before, auto-attempt the connection on startup.
+        var s = controller.loadDatabaseSettings()
+        if (s.host !== undefined && s.host !== "") {
+            db_host = s.host
+            db_port = s.port
+            db_name = s.name
+            db_user = s.user
+            db_password = s.password
+            autoConnectTimer.start()
+        }
+    }
+
+    function openDatabaseForm() {
+        var component = Qt.createComponent("DB_Connection_Formular.qml");
+        if (component.status === Component.Ready) {
+            var window = component.createObject(root);
+            window.show();
+        }
+    }
+
     /*onSelected_screenChanged: {
         console.log("main: " + selected_screen)
     }*/
@@ -174,15 +197,16 @@ Window {
                 if(success){
                     root.success_color = "green"
                     root.success_text = "Database connection successfully established"
-                    if(!controller.getDatabaseConnection){
-
-                    } else {
-                        var dbConnection = controller.getDatabaseConnection()
-                        nodesList.initialize(dbConnection, true);
-                    }
+                    root.autoConnectPending = false
+                    var dbConnection = controller.getDatabaseConnection()
+                    nodesList.initialize(dbConnection, true);
                 } else {
                     root.success_color = "red"
                     root.success_text = "Database connection failed. Check the access data and password. Make sure that any necessary VPN connection is established."
+                    if (root.autoConnectPending) {
+                        root.autoConnectPending = false
+                        root.openDatabaseForm()
+                    }
                 }
             }
             onSignalSlurmStatusChanged: (status)=>{
@@ -342,6 +366,15 @@ Window {
         Bottom_Bar{
             id: timeline_main
             anchors.bottom: parent.bottom
+        }
+    }
+    Timer {
+        id: autoConnectTimer
+        interval: 150 // kurze Verzögerung, damit das Fenster zuerst gerendert wird
+        repeat: false
+        onTriggered: {
+            autoConnectPending = true
+            controller.connect(db_host, db_name, parseInt(db_port), db_user, db_password)
         }
     }
     Timer {
