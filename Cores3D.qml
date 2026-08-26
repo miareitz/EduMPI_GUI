@@ -18,6 +18,13 @@ Rectangle {
     property bool p2p_lines: p2p_send_lines
     property bool c_lines: coll_lines
 
+    property var linesByFunction: ({})
+    property var functionOrder: []
+
+    ListModel {
+        id: oneSidedFunctionModel
+    }
+
     onListNodesChanged: {
         updateCheckTimer.start()
         if(listNodes){
@@ -92,18 +99,27 @@ Rectangle {
     Connections {
         target: oscData
         function onNewDataInsertion() {
-            customGeoOneSided.clearLines()
+            var grouped = {}
+            var order = []
             for(var row=0; row< oscData.rowCount(); row++){
+                var func = oscData.simple_data(row, "function")
                 var proc = oscData.simple_data(row, "processrank")
                 var partner = oscData.simple_data(row, "partnerrank")
                 if(partner < 0){
                     continue;
                 }
-                if(positionMap[proc] !== undefined && positionMap[partner] !== undefined) {
-                    customGeoOneSided.addLine(positionMap[proc], positionMap[partner])
+                if(positionMap[proc] === undefined || positionMap[partner] === undefined) {
+                    continue;
                 }
+                if(grouped[func] === undefined) {
+                    grouped[func] = []
+                    order.push(func)
+                }
+                grouped[func].push([positionMap[proc], positionMap[partner]])
             }
-            customGeoOneSided.newFrame()
+            linesByFunction = grouped
+            functionOrder = order
+            rebuildOneSidedModel()
         }
     }
 
@@ -125,11 +141,14 @@ Rectangle {
         }
 
         // *** 3D View nimmt den Rest des Platzes ein ***
-        View3D {
-            id: viewport
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            camera: cameraNode
+
+            View3D {
+                id: viewport
+                anchors.fill: parent
+                camera: cameraNode
             environment: SceneEnvironment {
                 backgroundMode: SceneEnvironment.Color
                 clearColor: "white"
@@ -387,16 +406,30 @@ Rectangle {
                     lineWidth: 1.2
                 }
             }
-            Model {
-                id: lineModelOneSided
-                geometry: CustomLineGeometry{
-                    id: customGeoOneSided
-                }
-                visible: onesided
-                materials: DefaultMaterial {
-                    depthDrawMode: Material.AlwaysDepthDraw
-                    diffuseColor: "blue"
-                    lineWidth: 1.0
+            Repeater3D {
+                id: oneSidedRepeater
+                model: oneSidedFunctionModel
+                delegate: Model {
+                    property string funcName: model.name
+                    property color funcColor: model.color
+                    visible: onesided
+                    geometry: CustomLineGeometry {
+                        id: oneSidedGeo
+                    }
+                    materials: DefaultMaterial {
+                        depthDrawMode: Material.AlwaysDepthDraw
+                        diffuseColor: funcColor
+                        lineWidth: 1.0
+                    }
+                    Component.onCompleted: {
+                        var lines = rectangle.linesByFunction[funcName]
+                        if (lines !== undefined) {
+                            for (var i = 0; i < lines.length; i++) {
+                                oneSidedGeo.addLine(lines[i][0], lines[i][1])
+                            }
+                            oneSidedGeo.newFrame()
+                        }
+                    }
                 }
             }
 
@@ -404,6 +437,56 @@ Rectangle {
                 eulerRotation: Qt.vector3d(250, -30, 0);
                 brightness: 0.8
                 ambientColor: "#7f7f7f"
+            }
+        }
+
+            // Legend: color -> one-sided MPI function
+            Rectangle {
+                id: oneSidedLegend
+                visible: onesided && oneSidedFunctionModel.count > 0
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: 10
+                width: 220
+                height: 44 + oneSidedFunctionModel.count * 20
+                color: "#f7f7f7"
+                border.color: "#cccccc"
+                radius: 4
+                z: 1000
+
+                Column {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.margins: 10
+                    spacing: 4
+
+                    Text {
+                        text: "One-sided operations"
+                        font.bold: true
+                        font.pixelSize: 12
+                        color: "black"
+                    }
+
+                    Repeater {
+                        model: oneSidedFunctionModel
+                        delegate: Row {
+                            spacing: 6
+                            Rectangle {
+                                width: 12
+                                height: 12
+                                radius: 2
+                                color: model.color
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: model.name
+                                font.pixelSize: 11
+                                color: "black"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -422,6 +505,53 @@ Rectangle {
             }
        }
    }
+
+    // *** One-sided arrow coloring + legend ***
+    function oneSidedColor(func) {
+        switch(func) {
+            case "MPI_Get": return "#2e7d32"
+            case "MPI_Rget": return "#4caf50"
+            case "MPI_Put": return "#1565c0"
+            case "MPI_Rput": return "#42a5f5"
+            case "MPI_Accumulate": return "#ef6c00"
+            case "MPI_Raccumulate": return "#ff9800"
+            case "MPI_Get_accumulate": return "#7cb342"
+            case "MPI_Rget_accumulate": return "#9ccc65"
+            case "MPI_Fetch_and_op": return "#c62828"
+            case "MPI_Compare_and_swap": return "#8e24aa"
+            case "MPI_Win_flush": return "#00838f"
+            case "MPI_Win_flush_local": return "#26c6da"
+            case "MPI_Win_flush_all": return "#00695c"
+            case "MPI_Win_flush_local_all": return "#26a69a"
+            case "MPI_Win_sync": return "#ec407a"
+            case "MPI_Win_fence": return "#6d4c41"
+            case "MPI_Win_lock": return "#00796b"
+            case "MPI_Win_lock_all": return "#009688"
+            case "MPI_Win_unlock": return "#e91e63"
+            case "MPI_Win_unlock_all": return "#f06292"
+            case "MPI_Win_start": return "#f9a825"
+            case "MPI_Win_complete": return "#8d6e63"
+            case "MPI_Win_post": return "#689f38"
+            case "MPI_Win_wait": return "#afb42b"
+            case "MPI_Win_test": return "#e53935"
+            case "MPI_Win_create": return "#607d8b"
+            case "MPI_Win_create_dynamic": return "#78909c"
+            case "MPI_Win_allocate": return "#283593"
+            case "MPI_Win_allocate_shared": return "#5c6bc0"
+            case "MPI_Win_attach": return "#90a4ae"
+            case "MPI_Win_detach": return "#9e9e9e"
+            case "MPI_Win_free": return "#37474f"
+            default: return "#616161"
+        }
+    }
+
+    function rebuildOneSidedModel() {
+        oneSidedFunctionModel.clear()
+        for (var i = 0; i < functionOrder.length; i++) {
+            var f = functionOrder[i]
+            oneSidedFunctionModel.append({ name: f, color: oneSidedColor(f) })
+        }
+    }
 
     // *** Funktionen für die Information Bar ***
     function getHeadingForOption() {
