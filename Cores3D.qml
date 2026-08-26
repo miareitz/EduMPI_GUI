@@ -21,10 +21,6 @@ Rectangle {
     property var linesByFunction: ({})
     property var functionOrder: []
 
-    ListModel {
-        id: oneSidedFunctionModel
-    }
-
     onListNodesChanged: {
         updateCheckTimer.start()
         if(listNodes){
@@ -119,7 +115,6 @@ Rectangle {
             }
             linesByFunction = grouped
             functionOrder = order
-            rebuildOneSidedModel()
         }
     }
 
@@ -408,21 +403,21 @@ Rectangle {
             }
             Repeater3D {
                 id: oneSidedRepeater
-                model: oneSidedFunctionModel
+                model: rectangle.functionOrder.length
                 delegate: Model {
-                    property string funcName: model.name
-                    property color funcColor: model.color
                     visible: onesided
                     geometry: CustomLineGeometry {
                         id: oneSidedGeo
                     }
                     materials: DefaultMaterial {
+                        id: oneSidedMat
                         depthDrawMode: Material.AlwaysDepthDraw
-                        diffuseColor: funcColor
                         lineWidth: 1.0
                     }
                     Component.onCompleted: {
-                        var lines = rectangle.linesByFunction[funcName]
+                        var f = rectangle.functionOrder[index]
+                        oneSidedMat.diffuseColor = rectangle.oneSidedColor(f)
+                        var lines = rectangle.linesByFunction[f]
                         if (lines !== undefined) {
                             for (var i = 0; i < lines.length; i++) {
                                 oneSidedGeo.addLine(lines[i][0], lines[i][1])
@@ -443,12 +438,12 @@ Rectangle {
             // Legend: color -> one-sided MPI function
             Rectangle {
                 id: oneSidedLegend
-                visible: onesided && oneSidedFunctionModel.count > 0
+                visible: onesided && functionOrder.length > 0
                 anchors.top: parent.top
                 anchors.right: parent.right
                 anchors.margins: 10
                 width: 220
-                height: 44 + oneSidedFunctionModel.count * 20
+                height: 44 + functionOrder.length * 20
                 color: "#f7f7f7"
                 border.color: "#cccccc"
                 radius: 4
@@ -468,18 +463,18 @@ Rectangle {
                     }
 
                     Repeater {
-                        model: oneSidedFunctionModel
+                        model: functionOrder.length
                         delegate: Row {
                             spacing: 6
                             Rectangle {
                                 width: 12
                                 height: 12
                                 radius: 2
-                                color: model.color
+                                color: rectangle.oneSidedColor(functionOrder[index])
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
-                                text: model.name
+                                text: functionOrder[index]
                                 font.pixelSize: 11
                                 color: "black"
                                 anchors.verticalCenter: parent.verticalCenter
@@ -542,14 +537,6 @@ Rectangle {
             case "MPI_Win_detach": return "#9e9e9e"
             case "MPI_Win_free": return "#37474f"
             default: return "#616161"
-        }
-    }
-
-    function rebuildOneSidedModel() {
-        oneSidedFunctionModel.clear()
-        for (var i = 0; i < functionOrder.length; i++) {
-            var f = functionOrder[i]
-            oneSidedFunctionModel.append({ name: f, color: oneSidedColor(f) })
         }
     }
 
