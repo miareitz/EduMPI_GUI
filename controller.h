@@ -79,6 +79,7 @@ public:
     Q_INVOKABLE void saveDatabaseSettings(const QString &host, const QString &port, const QString &db, const QString &user, const QString &password);
     Q_INVOKABLE QVariantMap loadDatabaseSettings();
     Q_INVOKABLE void loadRunHistory(int slurmId, bool hideSelf);
+    Q_INVOKABLE void sortRunHistory(int column, bool ascending);
     QObject* runHistoryModel() const;
     Q_INVOKABLE QVariantList getWaitTimeSummary(int slurmId, bool hideSelf);
     Q_INVOKABLE QVariantList getWaitTimeByRank(int slurmId, bool hideSelf);

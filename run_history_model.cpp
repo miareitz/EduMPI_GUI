@@ -14,6 +14,9 @@ void RunHistoryModel::setConnectionName(const QString &name)
 
 void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf)
 {
+    m_slurmId = slurmId;
+    m_hideSelf = hideSelf;
+
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.isOpen()) {
         qWarning() << "RunHistoryModel: database not open";
@@ -25,11 +28,32 @@ void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf)
     if (hideSelf) {
         q += " AND partnerrank != processrank";
     }
-    q += " ORDER BY time_start ASC";
+    q += " ORDER BY " + orderByClause();
     setQuery(q, db);
     if (lastError().isValid()) {
         qWarning() << "RunHistoryModel query error:" << lastError().text();
     }
+}
+
+QString RunHistoryModel::orderByClause() const
+{
+    static const char *const columns[] = {
+        "time_start", "processrank", "\"function\"", "partnerrank",
+        "senddatasize", "recvdatasize", "communicationtype",
+        "time_diff", "target_disp", "win_addr"
+    };
+    const int columnCount = static_cast<int>(sizeof(columns) / sizeof(columns[0]));
+    QString col = (m_sortColumn >= 0 && m_sortColumn < columnCount)
+                      ? QString::fromLatin1(columns[m_sortColumn])
+                      : QStringLiteral("time_start");
+    return col + (m_sortAscending ? QStringLiteral(" ASC") : QStringLiteral(" DESC"));
+}
+
+void RunHistoryModel::sortBy(int column, bool ascending)
+{
+    m_sortColumn = column;
+    m_sortAscending = ascending;
+    setRunQuery(m_slurmId, m_hideSelf);
 }
 
 QVariant RunHistoryModel::data(const QModelIndex &index, int role) const

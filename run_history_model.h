@@ -31,8 +31,16 @@ public:
 
     Q_INVOKABLE void setRunQuery(int slurmId, bool hideSelf);
 
+    Q_INVOKABLE void sortBy(int column, bool ascending);
+
 private:
+    QString orderByClause() const;
+
     QString m_connectionName;
+    int m_slurmId = -1;
+    bool m_hideSelf = true;
+    int m_sortColumn = 0;
+    bool m_sortAscending = true;
 };
 
 #endif // RUN_HISTORY_MODEL_H

@@ -15,6 +15,8 @@ Rectangle {
     property int timelineBuckets: 100
     property bool hideSelf: true
     property double programDuration: 0
+    property int sortColumn: 0
+    property bool sortAscending: true
 
     function fmtDuration(sec) {
         if (sec >= 1) return sec.toFixed(3) + " s"
@@ -169,16 +171,43 @@ Rectangle {
         Row {
             Layout.fillWidth: true
             spacing: 4
-            Text { text: "Time"; width: 90; color: "#00FF00"; font.bold: true }
-            Text { text: "Rank"; width: 44; color: "#00FF00"; font.bold: true }
-            Text { text: "Function"; width: 170; color: "#00FF00"; font.bold: true }
-            Text { text: "Partner"; width: 55; color: "#00FF00"; font.bold: true }
-            Text { text: "Send"; width: 70; color: "#00FF00"; font.bold: true }
-            Text { text: "Recv"; width: 70; color: "#00FF00"; font.bold: true }
-            Text { text: "Type"; width: 90; color: "#00FF00"; font.bold: true }
-            Text { text: "Duration"; width: 85; color: "#00FF00"; font.bold: true }
-            Text { text: "Disp"; width: 55; color: "#00FF00"; font.bold: true }
-            Text { text: "Window"; width: 130; color: "#00FF00"; font.bold: true }
+
+            Repeater {
+                model: [
+                    { label: "Time", width: 90, col: 0 },
+                    { label: "Rank", width: 44, col: 1 },
+                    { label: "Function", width: 170, col: 2 },
+                    { label: "Partner", width: 55, col: 3 },
+                    { label: "Send", width: 70, col: 4 },
+                    { label: "Recv", width: 70, col: 5 },
+                    { label: "Type", width: 90, col: 6 },
+                    { label: "Duration", width: 85, col: 7 },
+                    { label: "Disp", width: 55, col: 8 },
+                    { label: "Window", width: 130, col: 9 }
+                ]
+
+                delegate: Text {
+                    width: modelData.width
+                    color: root.sortColumn === modelData.col ? "#00FF00" : "#00cc55"
+                    font.bold: true
+                    text: modelData.label + (root.sortColumn === modelData.col ? (root.sortAscending ? " ▲" : " ▼") : "")
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (root.sortColumn === modelData.col) {
+                                root.sortAscending = !root.sortAscending
+                            } else {
+                                root.sortColumn = modelData.col
+                                root.sortAscending = true
+                            }
+                            controller.sortRunHistory(root.sortColumn, root.sortAscending)
+                        }
+                    }
+                }
+            }
         }
 
         ListView {

@@ -648,6 +648,12 @@ void Controller::loadRunHistory(int slurmId, bool hideSelf){
     }
 }
 
+void Controller::sortRunHistory(int column, bool ascending){
+    if (m_runHistoryModel) {
+        m_runHistoryModel->sortBy(column, ascending);
+    }
+}
+
 QObject* Controller::runHistoryModel() const {
     return m_runHistoryModel;
 }
