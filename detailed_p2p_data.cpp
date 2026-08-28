@@ -65,17 +65,24 @@ QVariant Detailed_p2p_data::data(const QModelIndex &index, int role) const {
 }
 
 QString Detailed_p2p_data::simple_data(int row, const QString &role) const {
-    if(row >= 0 && m_p2p_data.size()) {
-        QVariantList rowindex = m_p2p_data.at(row);
-        if(role == "function"){
-            return rowindex.at(0).toString();
-        } else if (role == "processrank"){
-            return rowindex.at(1).toString();
-        } else if (role == "partnerrank"){
-            return rowindex.at(2).toString();
-        }
+    if(row < 0 || row >= m_p2p_data.size()) {
+        return QString();
     }
-    return QString();
+    QVariantList rowindex = m_p2p_data.at(row);
+    int idx = -1;
+    if(role == "function") idx = 0;
+    else if(role == "processrank") idx = 1;
+    else if(role == "partnerrank") idx = 2;
+    else if(role == "send_ds") idx = 3;
+    else if(role == "recv_ds") idx = 4;
+    else if(role == "comm_time") idx = 5;
+    else if(role == "n_disp") idx = 6;
+    else if(role == "min_disp") idx = 7;
+    else if(role == "max_disp") idx = 8;
+    if(idx < 0 || idx >= rowindex.size()) {
+        return QString();
+    }
+    return rowindex.at(idx).toString();
 }
 
 QHash<int, QByteArray> Detailed_p2p_data::roleNames() const {

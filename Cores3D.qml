@@ -1,4 +1,5 @@
 import QtQuick
+import QtQml
 import QtQuick3D 6.8
 import GUI_Cluster
 import QtQuick3D.Helpers
@@ -21,6 +22,16 @@ Rectangle {
     property var linesByFunction: ({})
     property var functionOrder: []
     property real oneSidedOffset: 8.0
+    property var annotationLabels: []
+    property string annotationMode: "none"
+
+    Binding {
+        target: rectangle
+        property: "annotationMode"
+        value: arrow_annotation
+    }
+
+    onAnnotationModeChanged: rebuildAnnotations()
 
     onListNodesChanged: {
         updateCheckTimer.start()
@@ -112,10 +123,22 @@ Rectangle {
                     grouped[func] = []
                     order.push(func)
                 }
-                grouped[func].push([positionMap[proc], positionMap[partner]])
+                grouped[func].push({
+                    s: positionMap[proc],
+                    e: positionMap[partner],
+                    func: func,
+                    partner: partner,
+                    send: oscData.simple_data(row, "send_ds"),
+                    recv: oscData.simple_data(row, "recv_ds"),
+                    time: oscData.simple_data(row, "comm_time"),
+                    n: oscData.simple_data(row, "n_disp"),
+                    min: oscData.simple_data(row, "min_disp"),
+                    max: oscData.simple_data(row, "max_disp")
+                })
             }
             linesByFunction = grouped
             functionOrder = order
+            rebuildAnnotations()
         }
     }
 
@@ -424,12 +447,24 @@ Rectangle {
                         if (lines !== undefined) {
                             var total = rectangle.functionOrder.length
                             for (var i = 0; i < lines.length; i++) {
-                                var p = rectangle.offsetLine(lines[i][0], lines[i][1], index, total, rectangle.oneSidedOffset)
+                                var p = rectangle.offsetLine(lines[i].s, lines[i].e, index, total, rectangle.oneSidedOffset)
                                 oneSidedGeo.addLine(p[0], p[1])
                             }
                             oneSidedGeo.newFrame()
                         }
                     }
+                }
+            }
+
+            Repeater3D {
+                id: annotationRepeater
+                model: annotationLabels
+                visible: onesided
+                delegate: Text3D {
+                    text: modelData.text
+                    position: modelData.pos
+                    color: "#333333"
+                    font.pointSize: 12
                 }
             }
 
@@ -573,6 +608,55 @@ Rectangle {
         var center = (total - 1) / 2.0
         var off = perp.times((idx - center) * spacing)
         return [start.plus(off), end.plus(off)]
+    }
+
+    function rebuildAnnotations() {
+        var labels = []
+        if (annotationMode === "none") {
+            annotationLabels = labels
+            return
+        }
+        var total = functionOrder.length
+        for (var i = 0; i < functionOrder.length; i++) {
+            var f = functionOrder[i]
+            var lines = linesByFunction[f]
+            if (lines === undefined) continue
+            for (var j = 0; j < lines.length; j++) {
+                var edge = lines[j]
+                var off = offsetLine(edge.s, edge.e, i, total, oneSidedOffset)
+                var mid = Qt.vector3d((off[0].x + off[1].x) / 2,
+                                      (off[0].y + off[1].y) / 2,
+                                      (off[0].z + off[1].z) / 2)
+                labels.push({ pos: mid, text: annotationText(edge) })
+            }
+        }
+        annotationLabels = labels
+    }
+
+    function annotationText(edge) {
+        switch(annotationMode) {
+            case "function": return edge.func
+            case "partner": return "rank " + edge.partner
+            case "bytes": return (Number(edge.send) + Number(edge.recv)) + " B"
+            case "duration": return fmtDuration(Number(edge.time))
+            case "address": return fmtAddress(edge)
+        }
+        return ""
+    }
+
+    function fmtDuration(sec) {
+        if (sec >= 1) return sec.toFixed(3) + " s"
+        if (sec >= 0.001) return (sec * 1000).toFixed(2) + " ms"
+        return (sec * 1000000).toFixed(1) + " µs"
+    }
+
+    function fmtAddress(edge) {
+        var n = Number(edge.n)
+        if (n <= 0) return "n/a"
+        var mn = Number(edge.min)
+        var mx = Number(edge.max)
+        if (n === 1) return "0x" + mn.toString(16)
+        return "0x" + mn.toString(16) + ".." + mx.toString(16) + " (" + n + ")"
     }
 
     // *** Funktionen für die Information Bar ***

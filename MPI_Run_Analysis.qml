@@ -38,6 +38,7 @@ Window {
     property bool p2p: true
     property bool collective: true
     property bool onesided: true
+    property string arrow_annotation: "none"
     property string selected_screen: "Cores3D"
     property string option: "send/recv ratio (per proc)"
     property color gradient1: "green"

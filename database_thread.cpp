@@ -276,7 +276,10 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
                 QVariantList list;
                 list << query.value(0)  // function
                      << query.value(2) // processrank
-                     << query.value(3) ;// partnerrank
+                     << query.value(3) // partnerrank
+                     << (qlonglong)send_size
+                     << (qlonglong)recv_size
+                     << (double)time;
                 p2p_list.append(list);
                 //std::cout << "Test 1: " << query.value(0).toString().toStdString() << std::endl;
                 if(query.value(0).toString() == "MPI_Wait"){
@@ -341,7 +344,10 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
                 QVariantList list;
                 list << query.value(0) // function
                      << query.value(2) // processrank
-                     << query.value(3); // partnerrank
+                     << query.value(3) // partnerrank
+                     << (qlonglong)send_size
+                     << (qlonglong)recv_size
+                     << (double)time;
                 one_sided_list.append(list);
                 QString fun = query.value(0).toString() + ", ";
                 if(!s.contains(fun)){
@@ -365,6 +371,42 @@ void Database_Thread::detailed_p2p_Query(const QDateTime timestampA, const QDate
         qDebug() << "Query Error:" << fehler.text();
     }
     query.finish();
+
+    QHash<QString, QVector<qlonglong>> disp;
+    QSqlQuery dispQuery(db);
+    dispQuery.prepare("SELECT function, processrank, partnerrank, "
+                      "COUNT(DISTINCT target_disp), MIN(target_disp), MAX(target_disp) "
+                      "FROM edumpi_running_data "
+                      "WHERE edumpi_run_id = :slurm_id AND communicationtype = 'one-sided' "
+                      "AND partnerrank >= 0 AND target_disp IS NOT NULL AND target_disp != 0 "
+                      "GROUP BY function, processrank, partnerrank;");
+    dispQuery.bindValue(":slurm_id", m_slurm_id);
+    if (dispQuery.exec()) {
+        while (dispQuery.next()) {
+            QString key = dispQuery.value(0).toString() + "|"
+                        + dispQuery.value(1).toString() + "|"
+                        + dispQuery.value(2).toString();
+            disp[key] = {dispQuery.value(3).toLongLong(),
+                         dispQuery.value(4).toLongLong(),
+                         dispQuery.value(5).toLongLong()};
+        }
+    } else {
+        qDebug() << "Target displacement query failed:" << dispQuery.lastError().text();
+    }
+    dispQuery.finish();
+
+    for (QVariantList &row : one_sided_list) {
+        QString key = row.at(0).toString() + "|"
+                    + row.at(1).toString() + "|"
+                    + row.at(2).toString();
+        if (disp.contains(key)) {
+            const QVector<qlonglong> &d = disp[key];
+            row << d.at(0) << d.at(1) << d.at(2);
+        } else {
+            row << 0 << 0 << 0;
+        }
+    }
+
     emit setFunctionsString(s);
     emit updateDetailedP2P(p2p_list);
     emit updateDetailedColl(coll_list);
