@@ -12,10 +12,11 @@ void RunHistoryModel::setConnectionName(const QString &name)
     m_connectionName = name;
 }
 
-void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf)
+void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf, int winIndex)
 {
     m_slurmId = slurmId;
     m_hideSelf = hideSelf;
+    m_winIndex = winIndex;
 
     QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.isOpen()) {
@@ -23,10 +24,13 @@ void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf)
         return;
     }
     QString q = QString("SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, "
-                        "communicationtype, time_diff, target_disp, win_addr "
+                        "communicationtype, time_diff, target_disp, win_addr, win_index "
                         "FROM edumpi_running_data WHERE edumpi_run_id = %1").arg(slurmId);
     if (hideSelf) {
         q += " AND partnerrank != processrank";
+    }
+    if (winIndex >= 0) {
+        q += QString(" AND win_index = %1").arg(winIndex);
     }
     q += " ORDER BY " + orderByClause();
     setQuery(q, db);
@@ -40,7 +44,7 @@ QString RunHistoryModel::orderByClause() const
     static const char *const columns[] = {
         "time_start", "processrank", "\"function\"", "partnerrank",
         "senddatasize", "recvdatasize", "communicationtype",
-        "time_diff", "target_disp", "win_addr"
+        "time_diff", "target_disp", "win_addr", "win_index"
     };
     const int columnCount = static_cast<int>(sizeof(columns) / sizeof(columns[0]));
     QString col = (m_sortColumn >= 0 && m_sortColumn < columnCount)
@@ -53,7 +57,7 @@ void RunHistoryModel::sortBy(int column, bool ascending)
 {
     m_sortColumn = column;
     m_sortAscending = ascending;
-    setRunQuery(m_slurmId, m_hideSelf);
+    setRunQuery(m_slurmId, m_hideSelf, m_winIndex);
 }
 
 QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
@@ -73,6 +77,7 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         case DurationRole: col = 7; break;
         case DisplacementRole: col = 8; break;
         case WindowRole: col = 9; break;
+        case WinIndexRole: col = 10; break;
         default:
             return QSqlQueryModel::data(index, role);
     }
@@ -91,6 +96,12 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         if (a == 0) return QString();
         return QString("0x%1").arg(a, 0, 16);
     }
+    if (role == WinIndexRole) {
+        // No window (p2p/collective) has win_addr == 0 -> blank, matching Window.
+        qlonglong addr = QSqlQueryModel::data(QSqlQueryModel::index(index.row(), 9), Qt::DisplayRole).toLongLong();
+        if (addr == 0) return QString();
+        return QString::number(raw.toInt());
+    }
     return raw;
 }
 
@@ -107,5 +118,6 @@ QHash<int, QByteArray> RunHistoryModel::roleNames() const
     roles[DurationRole] = "duration";
     roles[DisplacementRole] = "displacement";
     roles[WindowRole] = "window";
+    roles[WinIndexRole] = "winindex";
     return roles;
 }

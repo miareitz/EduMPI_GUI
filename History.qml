@@ -183,7 +183,8 @@ Rectangle {
                     { label: "Type", width: 90, col: 6 },
                     { label: "Duration", width: 85, col: 7 },
                     { label: "Disp", width: 55, col: 8 },
-                    { label: "Window", width: 130, col: 9 }
+                    { label: "Window", width: 130, col: 9 },
+                    { label: "WinIdx", width: 50, col: 10 }
                 ]
 
                 delegate: Text {
@@ -236,6 +237,7 @@ Rectangle {
                     Text { text: model.duration; width: 85; color: "#ffcc00"; horizontalAlignment: Text.AlignRight }
                     Text { text: model.displacement; width: 55; color: "#ccaa88"; horizontalAlignment: Text.AlignRight }
                     Text { text: model.window; width: 130; color: "#aaddcc" }
+                    Text { text: model.winindex; width: 50; color: "#ddccaa" }
                 }
             }
         }

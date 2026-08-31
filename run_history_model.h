@@ -17,7 +17,8 @@ public:
         TypeRole,
         DurationRole,
         DisplacementRole,
-        WindowRole
+        WindowRole,
+        WinIndexRole
     };
 
     explicit RunHistoryModel(QObject *parent = nullptr);
@@ -29,7 +30,7 @@ public:
 
     Q_INVOKABLE int count() const { return rowCount(); }
 
-    Q_INVOKABLE void setRunQuery(int slurmId, bool hideSelf);
+    Q_INVOKABLE void setRunQuery(int slurmId, bool hideSelf, int winIndex = -1);
 
     Q_INVOKABLE void sortBy(int column, bool ascending);
 
@@ -39,6 +40,7 @@ private:
     QString m_connectionName;
     int m_slurmId = -1;
     bool m_hideSelf = true;
+    int m_winIndex = -1;
     int m_sortColumn = 0;
     bool m_sortAscending = true;
 };
