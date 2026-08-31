@@ -420,37 +420,6 @@ Rectangle {
                 }
             }
             Rectangle {
-                id: annotation_rect
-                width: parent.width
-                height: 60
-                color: "transparent"
-                Layout.alignment: Qt.AlignHCenter
-                visible: three_d_check.checked
-
-                Row {
-                    anchors.fill: parent
-                    anchors.margins: 5
-                    spacing: 8
-
-                    Text {
-                        text: "Arrow annotation:"
-                        color: "#999999"
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    ComboBox {
-                        id: annotation_box
-                        width: 150
-                        anchors.verticalCenter: parent.verticalCenter
-                        model: ["None", "Function", "Partner rank", "Bytes", "Duration", "Target address"]
-                        onCurrentIndexChanged: {
-                            var vals = ["none", "function", "partner", "bytes", "duration", "address"]
-                            arrow_annotation = vals[currentIndex]
-                        }
-                    }
-                }
-            }
-            Rectangle {
                 id: slider_rect_zoom
                 width: parent.width
                 height: 80

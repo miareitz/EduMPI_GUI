@@ -25,14 +25,6 @@ Rectangle {
     property var annotationLabels: []
     property string annotationMode: "none"
 
-    Binding {
-        target: rectangle
-        property: "annotationMode"
-        value: arrow_annotation
-    }
-
-    onAnnotationModeChanged: rebuildAnnotations()
-
     onListNodesChanged: {
         updateCheckTimer.start()
         if(listNodes){
@@ -453,18 +445,6 @@ Rectangle {
                             oneSidedGeo.newFrame()
                         }
                     }
-                }
-            }
-
-            Repeater3D {
-                id: annotationRepeater
-                model: annotationLabels
-                visible: onesided
-                delegate: Text3D {
-                    text: modelData.text
-                    position: modelData.pos
-                    color: "#333333"
-                    font.pointSize: 12
                 }
             }
 
