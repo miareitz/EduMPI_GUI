@@ -97,10 +97,11 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         return QString("0x%1").arg(a, 0, 16);
     }
     if (role == WinIndexRole) {
-        // No window (p2p/collective) has win_base == 0 -> blank, matching Window.
-        qlonglong base = QSqlQueryModel::data(QSqlQueryModel::index(index.row(), 9), Qt::DisplayRole).toLongLong();
-        if (base == 0) return QString();
-        return QString::number(raw.toInt());
+        // win_index 0 = no window (index 0 is reserved for MPI_WIN_NULL;
+        // p2p/collective rows are recorded with 0). Old runs have NULL -> 0.
+        int wi = raw.toInt();
+        if (wi == 0) return QString();
+        return QString::number(wi);
     }
     return raw;
 }
