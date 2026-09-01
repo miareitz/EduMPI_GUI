@@ -24,7 +24,7 @@ void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf, int winIndex)
         return;
     }
     QString q = QString("SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, "
-                        "communicationtype, time_diff, target_disp, win_addr, win_index "
+                        "communicationtype, time_diff, target_disp, win_base, win_index "
                         "FROM edumpi_running_data WHERE edumpi_run_id = %1").arg(slurmId);
     if (hideSelf) {
         q += " AND partnerrank != processrank";
@@ -44,7 +44,7 @@ QString RunHistoryModel::orderByClause() const
     static const char *const columns[] = {
         "time_start", "processrank", "\"function\"", "partnerrank",
         "senddatasize", "recvdatasize", "communicationtype",
-        "time_diff", "target_disp", "win_addr", "win_index"
+        "time_diff", "target_disp", "win_base", "win_index"
     };
     const int columnCount = static_cast<int>(sizeof(columns) / sizeof(columns[0]));
     QString col = (m_sortColumn >= 0 && m_sortColumn < columnCount)
@@ -97,9 +97,9 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         return QString("0x%1").arg(a, 0, 16);
     }
     if (role == WinIndexRole) {
-        // No window (p2p/collective) has win_addr == 0 -> blank, matching Window.
-        qlonglong addr = QSqlQueryModel::data(QSqlQueryModel::index(index.row(), 9), Qt::DisplayRole).toLongLong();
-        if (addr == 0) return QString();
+        // No window (p2p/collective) has win_base == 0 -> blank, matching Window.
+        qlonglong base = QSqlQueryModel::data(QSqlQueryModel::index(index.row(), 9), Qt::DisplayRole).toLongLong();
+        if (base == 0) return QString();
         return QString::number(raw.toInt());
     }
     return raw;

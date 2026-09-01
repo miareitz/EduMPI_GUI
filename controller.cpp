@@ -794,6 +794,28 @@ double Controller::getProgramDuration(int slurmId){
     return 0.0;
 }
 
+double Controller::getTotalMpiTime(int slurmId, bool hideSelf){
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+    if (!db.isOpen()) {
+        return 0.0;
+    }
+    QSqlQuery query(db);
+    QString q = "SELECT SUM(CASE WHEN time_diff >= 0 THEN time_diff ELSE 0 END) FROM edumpi_running_data WHERE edumpi_run_id = :id";
+    if (hideSelf) {
+        q += " AND partnerrank != processrank";
+    }
+    query.prepare(q);
+    query.bindValue(":id", slurmId);
+    if (query.exec() && query.next()) {
+        bool ok = false;
+        double d = query.value(0).toDouble(&ok);
+        if (ok && d > 0.0) {
+            return d;
+        }
+    }
+    return 0.0;
+}
+
 QVariantList Controller::open_job_windows() {
     return m_open_job_windows;
 }

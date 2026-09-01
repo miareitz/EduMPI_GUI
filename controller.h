@@ -85,6 +85,7 @@ public:
     Q_INVOKABLE QVariantList getWaitTimeByRank(int slurmId, bool hideSelf);
     Q_INVOKABLE QVariantList getWaitTimeTimeline(int slurmId, bool hideSelf, int bucketCount);
     Q_INVOKABLE double getProgramDuration(int slurmId);
+    Q_INVOKABLE double getTotalMpiTime(int slurmId, bool hideSelf);
 
     Q_INVOKABLE bool copyEnvFile();
 

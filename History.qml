@@ -15,6 +15,7 @@ Rectangle {
     property int timelineBuckets: 100
     property bool hideSelf: true
     property double programDuration: 0
+    property double totalMpiTime: 0
     property int sortColumn: 0
     property bool sortAscending: true
 
@@ -25,8 +26,9 @@ Rectangle {
     }
 
     function percent(sec) {
-        if (programDuration <= 0) return ""
-        return (sec / programDuration * 100).toFixed(1) + "%"
+        var den = totalMpiTime > 0 ? totalMpiTime : programDuration
+        if (den <= 0) return ""
+        return (sec / den * 100).toFixed(1) + "%"
     }
 
     function reload() {
@@ -34,6 +36,7 @@ Rectangle {
             controller.loadRunHistory(listNodes.slurm_id, hideSelf)
             eventCount = controller.runHistoryModel ? controller.runHistoryModel.count() : 0
             programDuration = controller.getProgramDuration(listNodes.slurm_id)
+            totalMpiTime = controller.getTotalMpiTime(listNodes.slurm_id, hideSelf)
             summary = controller.getWaitTimeSummary(listNodes.slurm_id, hideSelf)
             byRank = controller.getWaitTimeByRank(listNodes.slurm_id, hideSelf)
             timeline = controller.getWaitTimeTimeline(listNodes.slurm_id, hideSelf, timelineBuckets)
@@ -53,7 +56,7 @@ Rectangle {
         spacing: 4
 
         Text {
-            text: "Operation history  (" + eventCount + " events)  —  program time " + root.fmtDuration(programDuration)
+            text: "Operation history  (" + eventCount + " events)  —  program time " + root.fmtDuration(programDuration) + "  ·  MPI time " + root.fmtDuration(totalMpiTime)
             color: "#00FF00"
             font.pointSize: 12
         }
@@ -77,7 +80,7 @@ Rectangle {
                 spacing: 2
 
                 Text {
-                    text: "Total time in MPI calls, by function"
+                    text: "Total time in MPI calls, by function  (% of MPI time)"
                     visible: summary.length > 0
                     color: "#ffcc00"
                     font.pointSize: 10
@@ -183,7 +186,7 @@ Rectangle {
                     { label: "Type", width: 90, col: 6 },
                     { label: "Duration", width: 85, col: 7 },
                     { label: "Disp", width: 55, col: 8 },
-                    { label: "Window", width: 130, col: 9 },
+                    { label: "WinBase", width: 130, col: 9 },
                     { label: "WinIdx", width: 50, col: 10 }
                 ]
 
