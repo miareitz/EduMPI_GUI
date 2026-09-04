@@ -24,7 +24,7 @@ void RunHistoryModel::setRunQuery(int slurmId, bool hideSelf, int winIndex)
         return;
     }
     QString q = QString("SELECT time_start, processrank, \"function\", partnerrank, senddatasize, recvdatasize, "
-                        "communicationtype, time_diff, target_disp, win_base, win_index "
+                        "communicationtype, time_diff, target_disp, win_base, win_index, callsites "
                         "FROM edumpi_running_data WHERE edumpi_run_id = %1").arg(slurmId);
     if (hideSelf) {
         q += " AND partnerrank != processrank";
@@ -44,7 +44,7 @@ QString RunHistoryModel::orderByClause() const
     static const char *const columns[] = {
         "time_start", "processrank", "\"function\"", "partnerrank",
         "senddatasize", "recvdatasize", "communicationtype",
-        "time_diff", "target_disp", "win_base", "win_index"
+        "time_diff", "target_disp", "win_base", "win_index", "callsites"
     };
     const int columnCount = static_cast<int>(sizeof(columns) / sizeof(columns[0]));
     QString col = (m_sortColumn >= 0 && m_sortColumn < columnCount)
@@ -78,6 +78,7 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         case DisplacementRole: col = 8; break;
         case WindowRole: col = 9; break;
         case WinIndexRole: col = 10; break;
+        case CallsitesRole: col = 11; break;
         default:
             return QSqlQueryModel::data(index, role);
     }
@@ -103,6 +104,25 @@ QVariant RunHistoryModel::data(const QModelIndex &index, int role) const
         if (wi == 0) return QString();
         return QString::number(wi);
     }
+    if (role == CallsitesRole) {
+        // 24-byte BYTEA = 3 big-endian 64-bit return addresses.
+        QByteArray b = raw.toByteArray();
+        if (b.size() != 24) return QString();
+        const unsigned char *d = reinterpret_cast<const unsigned char *>(b.constData());
+        auto read64 = [&](int off) {
+            quint64 a = 0;
+            for (int i = 0; i < 8; i++) a = (a << 8) | d[off + i];
+            return a;
+        };
+        QString out;
+        for (int i = 0; i < 3; i++) {
+            quint64 a = read64(i * 8);
+            if (a == 0) break;
+            if (!out.isEmpty()) out += QLatin1String(" | ");
+            out += QString("0x%1").arg(a, 0, 16);
+        }
+        return out;
+    }
     return raw;
 }
 
@@ -120,5 +140,6 @@ QHash<int, QByteArray> RunHistoryModel::roleNames() const
     roles[DisplacementRole] = "displacement";
     roles[WindowRole] = "window";
     roles[WinIndexRole] = "winindex";
+    roles[CallsitesRole] = "callsites";
     return roles;
 }

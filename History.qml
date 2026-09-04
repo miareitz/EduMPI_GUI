@@ -187,7 +187,8 @@ Rectangle {
                     { label: "Duration", width: 85, col: 7 },
                     { label: "Disp", width: 55, col: 8 },
                     { label: "WinBase", width: 130, col: 9 },
-                    { label: "WinIdx", width: 50, col: 10 }
+                    { label: "WinIdx", width: 50, col: 10 },
+                    { label: "Call sites", width: 330, col: 11 }
                 ]
 
                 delegate: Text {
@@ -241,6 +242,7 @@ Rectangle {
                     Text { text: model.displacement; width: 55; color: "#ccaa88"; horizontalAlignment: Text.AlignRight }
                     Text { text: model.window; width: 130; color: "#aaddcc" }
                     Text { text: model.winindex; width: 50; color: "#ddccaa" }
+                    Text { text: model.callsites; width: 330; color: "#bbaacc"; elide: Text.ElideRight }
                 }
             }
         }

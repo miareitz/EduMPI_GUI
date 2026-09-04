@@ -18,7 +18,8 @@ public:
         DurationRole,
         DisplacementRole,
         WindowRole,
-        WinIndexRole
+        WinIndexRole,
+        CallsitesRole
     };
 
     explicit RunHistoryModel(QObject *parent = nullptr);
